@@ -99,9 +99,14 @@ def prepare_prompt(text: str, speaker: int, audio_path: str, sample_rate: int) -
     return Segment(text=text, speaker=speaker, audio=audio_tensor)
 
 class Jarvis:
-    def __init__(self, deepseek_ckpt, deepseek_config, device="cuda", dry_run: bool = False):
+    def __init__(self, deepseek_ckpt, deepseek_config, device="cuda", dry_run: bool = False, speaker: str = "maya", prefer_deepseek: bool = False, prefer_sesame: bool = False):
         self.device = device
         self.dry_run = dry_run
+        self.requested_speaker = speaker
+        # default speaker map; can be updated if real prompts are available
+        self.speaker_map = {"maya": 1, "default": 0}
+        self.prefer_deepseek = prefer_deepseek
+        self.prefer_sesame = prefer_sesame
         print(f"Initializing Jarvis on {device}... dry_run={dry_run}")
 
         # 1. Initialize DeepSeek (The Brain)
@@ -209,19 +214,42 @@ class Jarvis:
                 def generate(self, text, speaker, context, max_audio_length_ms=15000):
                     return None
             self.voice_gen = _MockVoiceGenFallback()
-        
+
+        # Determine whether we consider DeepSeek / Sesame available for use
+        self.use_deepseek = bool(models_present)
+        if self.prefer_deepseek and not self.use_deepseek:
+            print("--prefer-deepseek set but DeepSeek checkpoints not found; will keep fallback generator.")
+
+        self.voice_is_real = not isinstance(self.voice_gen, _MockVoiceGenFallback)
+        if self.prefer_sesame and not self.voice_is_real:
+            print("--prefer-sesame set but Sesame CSM not available; will use platform TTS fallback.")
+
         if not self.dry_run and models_present:
             # Download default prompts for Sesame when real models/prompts are available
             print("Downloading voice prompts...")
             if hf_hub_download is None:
                 raise RuntimeError("huggingface_hub is required to download voice prompts. Install huggingface_hub or provide local prompts.")
-            prompt_path = hf_hub_download(repo_id="sesame/csm-1b", filename="prompts/conversational_a.wav")
-            self.voice_prompt = prepare_prompt(
-                "like revising for an exam I'd have to try and like keep up the momentum because I'd start really early",
-                0,
-                prompt_path,
-                self.voice_gen.sample_rate
-            )
+            # download and prepare default prompts; assign Maya->speaker 1 mapping by default
+            try:
+                prompt_path = hf_hub_download(repo_id="sesame/csm-1b", filename="prompts/conversational_a.wav")
+                prompt_path_b = hf_hub_download(repo_id="sesame/csm-1b", filename="prompts/conversational_b.wav")
+                prompt_a = prepare_prompt(
+                    "like revising for an exam I'd have to try and like keep up the momentum because I'd start really early",
+                    0,
+                    prompt_path,
+                    self.voice_gen.sample_rate
+                )
+                prompt_b = prepare_prompt(
+                    "like a super Mario level...",
+                    1,
+                    prompt_path_b,
+                    self.voice_gen.sample_rate
+                )
+                # default to Maya -> speaker 1
+                self.speaker_map = {"maya": 1, "default": 0}
+                self.voice_prompt = prompt_b if self.requested_speaker in ("maya", "1") else prompt_a
+            except Exception:
+                self.voice_prompt = Segment(speaker=0, text="[fallback prompt]", audio=None)
         else:
             # fallback prompt segment
             try:
@@ -230,6 +258,17 @@ class Jarvis:
                 self.voice_prompt = None
         self.messages = []
         self.voice_history = [self.voice_prompt]
+
+    def _resolve_speaker(self) -> int:
+        # return numeric speaker id: try numeric string, then map name, else default
+        try:
+            if isinstance(self.requested_speaker, int):
+                return int(self.requested_speaker)
+            if isinstance(self.requested_speaker, str) and self.requested_speaker.isdigit():
+                return int(self.requested_speaker)
+            return int(self.speaker_map.get(self.requested_speaker, self.speaker_map.get("default", 0)))
+        except Exception:
+            return 0
 
     def think(self, user_input):
         self.messages.append({"role": "user", "content": user_input})
@@ -274,9 +313,22 @@ class Jarvis:
 
     def speak(self, text):
         print(f"Jarvis: {text}")
+        # If audio output is disabled, skip generation and TTS
+        if getattr(self, 'no_audio', False):
+            try:
+                spk = self._resolve_speaker()
+            except Exception:
+                spk = 0
+            self.voice_history.append(Segment(text=text, speaker=spk, audio=None))
+            print("(audio disabled) ->", text)
+            return
         if self.dry_run:
             # In dry-run mode, just append a segment placeholder and skip audio generation
-            self.voice_history.append(Segment(text=text, speaker=0, audio=None))
+            try:
+                spk = self._resolve_speaker()
+            except Exception:
+                spk = 0
+            self.voice_history.append(Segment(text=text, speaker=spk, audio=None))
             print("(dry-run) voice skipped, not saving audio")
             return
         # Try to generate audio via voice generator (may be a mock)
@@ -285,9 +337,9 @@ class Jarvis:
             if getattr(self, 'voice_gen', None) is not None:
                 audio_tensor = self.voice_gen.generate(
                     text=text,
-                    speaker=0,
+                    speaker=self._resolve_speaker(),
                     context=self.voice_history,
-                    max_audio_length_ms=15_000
+                    max_audio_length_ms=15_000,
                 )
         except Exception:
             audio_tensor = None
@@ -327,7 +379,11 @@ class Jarvis:
 
         # Update voice context (keep small window)
         try:
-            self.voice_history.append(Segment(text=text, speaker=0, audio=audio_tensor))
+            try:
+                spk = self._resolve_speaker()
+            except Exception:
+                spk = 0
+            self.voice_history.append(Segment(text=text, speaker=spk, audio=audio_tensor))
             if len(self.voice_history) > 8:
                 # keep prompt + recent history
                 self.voice_history = [self.voice_history[0]] + self.voice_history[-7:]
@@ -342,6 +398,10 @@ def main():
     parser.add_argument("--wake-word", type=str, default="jarvis", help="Wake word to listen for (simple ASR-based detection)")
     parser.add_argument("--device", type=str, choices=["auto", "cpu", "mps", "cuda"], default="auto", help="Device to run models on (auto detects mps/cuda/cpu)")
     parser.add_argument("--dry-run", action="store_true", help="Run in dry-run mode (no model weights, fast) ")
+    parser.add_argument("--speaker", type=str, default="maya", help="Voice speaker id or name to use for Sesame (e.g. 'maya' or numeric id)")
+    parser.add_argument("--no-audio", action="store_true", help="Disable any audio output (skip TTS and model voice generation)")
+    parser.add_argument("--prefer-deepseek", action="store_true", help="Prefer DeepSeek for answers when available")
+    parser.add_argument("--prefer-sesame", action="store_true", help="Prefer Sesame CSM for voice output when available")
     parser.add_argument("--once", action="store_true", help="Print greeting and exit (non-interactive)")
     args = parser.parse_args()
 
@@ -365,7 +425,16 @@ def main():
 
     device = get_preferred_device(args.device)
     
-    jarvis = Jarvis(args.ds_ckpt, args.ds_config, device=device, dry_run=args.dry_run)
+    jarvis = Jarvis(
+        args.ds_ckpt,
+        args.ds_config,
+        device=device,
+        dry_run=args.dry_run,
+        speaker=args.speaker,
+        prefer_deepseek=args.prefer_deepseek,
+        prefer_sesame=args.prefer_sesame,
+    )
+    jarvis.no_audio = args.no_audio
 
     print("\n--- Jarvis is Online ---")
 
