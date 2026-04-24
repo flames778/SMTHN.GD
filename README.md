@@ -51,6 +51,23 @@ Run full Jarvis (real models)
 python jarvis.py --ds-ckpt ./DeepSeek-V4-Pro --ds-config ./DeepSeek-V4-Pro/inference/config.json
 ```
 
+Fetching large assets for team
+ - To avoid committing large binary files to git, use the provided script `scripts/fetch_assets.sh`.
+ - Example: `scripts/fetch_assets.sh assets` will download the Miniforge installer into `assets/`.
+ - You can set `DEEPSEEK_URL` to a tar.gz that contains the `DeepSeek-V4-Pro` checkpoint tree, and `SESAME_PROMPTS_URL` to prompts archive.
+
+Example usage (download Miniforge and DeepSeek archive):
+```bash
+# export DEEPSEEK_URL="https://example.com/deepseek.tar.gz"
+DEEPSEEK_URL="<url-to-deepseek-tar.gz>" scripts/fetch_assets.sh assets
+```
+
+Team workflow
+ - Clone repository with submodules:
+	 - `git clone --recurse-submodules <repo>`
+ - Run `scripts/fetch_assets.sh` (or set the environment variables and run) to fetch large installers and model checkpoints into place.
+ - This keeps the main git history small and lets team members obtain large assets from an external host.
+
 Flags
 - `--dry-run`: simulate responses without loading model weights (useful for development)
 - `--enable-wake`: enable microphone wake-word listening (requires `sounddevice` and `openai-whisper`)
