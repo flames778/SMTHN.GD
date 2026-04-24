@@ -192,7 +192,23 @@ class Jarvis:
         
         # 2. Initialize Sesame CSM (The Voice)
         print("Loading Sesame CSM Voice Assistant...")
-        self.voice_gen = load_csm_1b(device)
+        # Try to import real CSM generator if available (submodule), otherwise use mock
+        try:
+            if load_csm_1b is None:
+                from generator import load_csm_1b, Segment  # type: ignore
+        except Exception:
+            # leave load_csm_1b as-is (may be mock)
+            pass
+        try:
+            self.voice_gen = load_csm_1b(device)
+        except Exception:
+            # fallback mock
+            class _MockVoiceGenFallback:
+                def __init__(self):
+                    self.sample_rate = 24000
+                def generate(self, text, speaker, context, max_audio_length_ms=15000):
+                    return None
+            self.voice_gen = _MockVoiceGenFallback()
         
         if not self.dry_run and models_present:
             # Download default prompts for Sesame when real models/prompts are available
@@ -222,10 +238,19 @@ class Jarvis:
             parsed_message = {"role": "assistant", "content": response}
             self.messages.append(parsed_message)
             return parsed_message["content"]
-        # If DeepSeek not available, use fallback HF generator if present
+        # If DeepSeek not available, use fallback generator: prefer HF pipeline if torch present, otherwise simple fallback
         if getattr(self, 'brain', None) is None:
+            prompt = encode_messages(self.messages, thinking_mode="chat") if encode_messages is not None else user_input
+            # prefer a transformers pipeline fallback if torch is available
+            if getattr(self, '_fallback_gen', None) is None:
+                try:
+                    if torch is not None:
+                        from transformers import pipeline
+                        self._fallback_gen = pipeline('text-generation', model='distilgpt2')
+                except Exception:
+                    self._fallback_gen = None
+
             if getattr(self, '_fallback_gen', None) is not None:
-                prompt = encode_messages(self.messages, thinking_mode="chat") if encode_messages is not None else user_input
                 try:
                     out = self._fallback_gen(prompt, max_new_tokens=150, do_sample=True, temperature=0.7)
                     text = out[0]['generated_text'] if isinstance(out, list) and out else str(out)
