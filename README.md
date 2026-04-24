@@ -80,3 +80,23 @@ Notes
 - CPU-only inference for large models may be slow; prefer machines with GPUs or Apple MPS where available.
 
 If you want, I can help automate environment setup or run a full end-to-end test if you provide model checkpoints and confirm you want me to proceed.
+
+S3 upload/download helpers
+ - This repo now includes `scripts/s3_assets.py` and shell wrappers `scripts/upload_to_s3.sh` and `scripts/download_from_s3.sh`.
+ - Usage examples:
+	 - Upload a file or folder:
+		 ```bash
+		 scripts/upload_to_s3.sh my-bucket assets/Miniforge3-MacOSX-x86_64.sh models
+		 # or recursive folder upload:
+		 python3 scripts/s3_assets.py upload --bucket my-bucket --key-prefix models --recursive DeepSeek-V4-Pro
+		 ```
+	 - Download a single key:
+		 ```bash
+		 scripts/download_from_s3.sh my-bucket models/Miniforge3-MacOSX-x86_64.sh assets
+		 ```
+	 - Download recursively by prefix:
+		 ```bash
+		 scripts/download_from_s3.sh my-bucket models assets prefix
+		 ```
+
+Security: prefer using IAM roles (CI) or environment variables from `.env` (see `.env.example`) — never commit real credentials.
