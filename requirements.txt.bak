@@ -1,0 +1,14 @@
+torch>=2.2.0
+torchaudio
+transformers>=4.45.0
+safetensors
+huggingface_hub
+fast_hadamard_transform
+tilelang==0.1.8
+numpy
+scipy
+soundfile
+pydub
+git+https://github.com/SesameAILabs/silentcipher@master
+sounddevice
+openai-whisper
