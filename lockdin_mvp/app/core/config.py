@@ -17,6 +17,18 @@ class Settings(BaseSettings):
 
     google_client_id: str = Field(default="", alias="GOOGLE_CLIENT_ID")
     google_client_secret: str = Field(default="", alias="GOOGLE_CLIENT_SECRET")
+    google_oauth_token_url: str = Field(
+        default="https://oauth2.googleapis.com/token",
+        alias="GOOGLE_OAUTH_TOKEN_URL",
+    )
+    google_oauth_authorize_url: str = Field(
+        default="https://accounts.google.com/o/oauth2/v2/auth",
+        alias="GOOGLE_OAUTH_AUTHORIZE_URL",
+    )
+    google_oauth_default_redirect_uri: str = Field(
+        default="http://localhost:3000/oauth/google/callback",
+        alias="GOOGLE_OAUTH_DEFAULT_REDIRECT_URI",
+    )
 
     stepfun_api_key: str = Field(default="", alias="STEPFUN_API_KEY")
     nemotron_api_key: str = Field(default="", alias="NEMOTRON_API_KEY")
