@@ -2,6 +2,45 @@
 
 All notable changes to this project are documented in this file.
 
+## Unreleased - M1 Structured Correlation Logging
+
+### Added
+- `CorrelationIdMiddleware` for generating and extracting correlation IDs.
+  - Auto-generates UUID4 if not provided in X-Correlation-ID header.
+  - Enables external trace ID propagation for distributed tracing.
+  - Injects correlation_id into all response headers.
+- `StructuredLogger` for JSON-formatted structured logging.
+  - Emits logs with timestamp, level, message, correlation_id, and actor context.
+  - Supports multiple log levels: info, error, warning, debug.
+  - Includes additional structured fields via **kwargs.
+- Context variables for request-scoped data.
+  - `_correlation_id`: Unique request identifier.
+  - `_user_id` and `_device_id`: Actor identity for structured logs.
+  - Helper functions: `get_correlation_id()`, `set_actor_context()`, `get_actor_context()`.
+- Automatic correlation_id injection in error responses.
+  - Exception handlers automatically capture and inject correlation_id.
+  - All RFC 9457 Problem Details now include correlation_id.
+  - Error tracing and debugging enabled without exposing stack traces.
+- Comprehensive test suite (13 tests, all passing).
+  - Middleware: ID generation, extraction, header propagation (4 tests).
+  - Structured logging: JSON format, log levels, timestamps (3 tests).
+  - Actor context: storage, retrieval, logging integration (3 tests).
+  - Integration: endpoint tracing, error tracing, ID regeneration (3 tests).
+
+### Changed
+- Exception handlers updated to inject correlation_id into responses.
+- `ProblemDetailsException` handler captures correlation_id before response.
+- `HTTPException` handler injects correlation_id into problem details.
+- Generic exception handler adds correlation_id to error responses.
+- MVP app registers CorrelationIdMiddleware during startup.
+
+### Observability
+- Full end-to-end request tracing via correlation IDs.
+- Structured JSON logs for centralized log aggregation.
+- Actor identity (user_id, device_id) in all logs.
+- Error responses include correlation_id for support and debugging.
+- Integration with log aggregation platforms (ELK, Datadog, etc.).
+
 ## Unreleased - M1 RFC 9457 Problem Details
 
 ### Added

@@ -125,6 +125,57 @@ API Reliability Improvement:
 
 Error responses now consistently include correlation_id for request tracing without leaking internal stack traces. Clients receive machine-readable error_code alongside human-readable title and detail, enabling better UX and monitoring. The detail field is safe to expose; stack traces remain internal only.
 
+## Slice 5: Structured Correlation Logging for Request Tracing
+
+Completed:
+
+- Implemented `CorrelationIdMiddleware` for generating/extracting correlation IDs.
+  - Generates UUID4 if not provided in request.
+  - Extracts `X-Correlation-ID` header if present (enables external trace ID propagation).
+  - Injects correlation_id into response headers for end-to-end tracing.
+- Implemented `StructuredLogger` with JSON-formatted logs.
+  - Emits valid JSON with timestamp (ISO 8601), level, message, correlation_id.
+  - Includes actor context (user_id, device_id) in all logs.
+  - Supports additional structured fields via **kwargs.
+  - Multiple log levels: info, error, warning, debug.
+- Created context variables for request-scoped data.
+  - `_correlation_id`: Unique request identifier.
+  - `_user_id` and `_device_id`: Actor identity for structured logging.
+  - Functions: `get_correlation_id()`, `set_actor_context()`, `get_actor_context()`.
+- Updated exception handlers to auto-inject correlation_id.
+  - `ProblemDetailsException` handler captures correlation_id before response.
+  - `HTTPException` handler injects correlation_id into problem details.
+  - Generic exception handler adds correlation_id to error responses.
+  - All RFC 9457 error responses now include correlation_id.
+- Registered middleware in application startup.
+  - Added `CorrelationIdMiddleware` to MVP app.
+  - Backend uses context variables directly (no middleware needed).
+- Created comprehensive test suite (13 tests, all passing).
+  - Middleware tests: generation, extraction, header propagation (4 tests).
+  - Structured logging tests: JSON format, log levels, timestamps (3 tests).
+  - Actor context tests: storage, retrieval, logging integration (3 tests).
+  - Integration tests: endpoint tracing, error tracing, ID regeneration (3 tests).
+
+Validation:
+
+- Correlation logging tests: 13/13 pass.
+- Problem details integration: correlation_id present in all error responses.
+- Full test suite: 58 tests pass (45 from Slices 1-4 + 13 new).
+- Combined coverage maintained at ≥72%.
+
+Observability Improvements:
+
+- Every request carries a unique correlation_id from ingress to egress.
+- Request tracing across multiple services (via X-Correlation-ID header).
+- Structured JSON logs enable centralized log aggregation (ELK, Datadog, etc.).
+- Actor identity (user_id, device_id) automatically included in logs.
+- Error responses include correlation_id for support/debugging.
+- Additional context fields can be injected via structured logger.
+
+## Security Boundary (Updated for Slice 5)
+
+Correlation IDs are non-sensitive unique identifiers for tracing only; no credentials or sensitive data are included. Actor context (user_id, device_id) is safe for logs; sensitive identity resolution is always server-side. Structured logs can be freely aggregated to external log services for monitoring and debugging.
+
 ## Remaining M1 Work
 
 - [x] M1-T02 Add users, devices, sessions, and conversations persistence.
@@ -132,7 +183,7 @@ Error responses now consistently include correlation_id for request tracing with
 - [ ] M1-T04 Document production KMS/token custody path.
 - [ ] M1-T05 Migrate remaining core operations into use cases and explicit transactions.
 - [x] M1-T06 Apply RFC 9457 problem details to all API failures.
-- [ ] M1-T07 Add structured correlation logging.
+- [x] M1-T07 Add structured correlation logging.
 - [ ] M1-T08 Add request boundary protections.
 - [x] M1-T09 Replace deprecated startup events with lifespan management.
 - [ ] M1-T10 Add mutation and job idempotency.
