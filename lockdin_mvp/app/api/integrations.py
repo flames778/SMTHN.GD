@@ -1,9 +1,31 @@
+"""Integration API routes - thin layer over application use cases."""
+
+from __future__ import annotations
+
 from typing import Annotated
 
 from fastapi import APIRouter, Depends, HTTPException
 from lockdin_backend.api.dependencies import ActorDependency
 from sqlalchemy.orm import Session
 
+from app.application.integrations import (
+    ConnectGoogleCommand,
+    ConnectGoogleIntegration,
+    IntegrationNotFoundError,
+    IntegrationResult,
+    ListIntegrations,
+    OAuthCallback,
+    OAuthCallbackCommand,
+    OAuthCodeExchangeFailedError,
+    OAuthStateInvalidError,
+    OAuthTokenRefreshFailedError,
+    RefreshIntegration,
+    RefreshIntegrationCommand,
+    RefreshTokenUnavailableError,
+    RevokeIntegration,
+    RevokeIntegrationCommand,
+    UnsupportedIntegrationError,
+)
 from app.db.session import get_db
 from app.repositories.integrations import IntegrationRepository
 from app.schemas.integration import (
@@ -23,8 +45,24 @@ DbSession = Annotated[Session, Depends(get_db)]
 AuthorizeRequest = Annotated[IntegrationAuthorizeUrlRequest, Depends()]
 
 
+def _to_read(result: IntegrationResult) -> IntegrationRead:
+    return IntegrationRead(
+        id=result.id,
+        user_id=result.user_id,
+        provider=result.provider,
+        scope=result.scope,
+        token_type=result.token_type,
+        status=result.status,
+        expires_at=result.expires_at,
+        created_at=result.created_at,
+        updated_at=result.updated_at,
+    )
+
+
 @router.get("/google/authorize-url", response_model=IntegrationAuthorizeUrlResponse)
-def google_authorize_url(request: AuthorizeRequest, actor: ActorDependency) -> IntegrationAuthorizeUrlResponse:
+def google_authorize_url(
+    request: AuthorizeRequest, actor: ActorDependency
+) -> IntegrationAuthorizeUrlResponse:
     oauth = GoogleOAuthService()
     result = oauth.build_authorize_url(
         user_id=actor.user_id,
@@ -42,36 +80,24 @@ def google_callback(
     db: DbSession,
     redirect_uri: str | None = None,
 ) -> IntegrationRead:
-    oauth = GoogleOAuthService()
-    if not oauth.verify_state(state=state, user_id=actor.user_id):
-        raise HTTPException(
-            status_code=400,
-            detail=problem_details(
-                error_code="OAUTH_STATE_INVALID",
-                detail="OAuth state token expired or was tampered with",
-            ).to_dict(),
-        )
-
-    try:
-        token = oauth.exchange_code(code, redirect_uri)
-    except ValueError as exc:
-        raise HTTPException(
-            status_code=400,
-            detail=problem_details(
-                error_code="OAUTH_CODE_EXCHANGE_FAILED",
-                detail=str(exc),
-            ).to_dict(),
-        ) from exc
-
-    row = IntegrationRepository(db).upsert_google(
-        user_id=actor.user_id,
-        access_token=token["access_token"],
-        refresh_token=token["refresh_token"],
-        scope=token.get("scope", ""),
-        token_type=token.get("token_type", "Bearer"),
-        expires_at=token["expires_at"],
+    use_case = OAuthCallback(
+        repository=IntegrationRepository(db),
+        oauth=GoogleOAuthService(),
+        unit_of_work=db,
     )
-    return IntegrationRead.model_validate(row)
+    try:
+        result = use_case.execute(actor, OAuthCallbackCommand(code=code, state=state, redirect_uri=redirect_uri))
+    except OAuthStateInvalidError as exc:
+        raise HTTPException(
+            status_code=400,
+            detail=problem_details(error_code="OAUTH_STATE_INVALID", detail=str(exc)).to_dict(),
+        ) from exc
+    except OAuthCodeExchangeFailedError as exc:
+        raise HTTPException(
+            status_code=400,
+            detail=problem_details(error_code="OAUTH_CODE_EXCHANGE_FAILED", detail=str(exc)).to_dict(),
+        ) from exc
+    return _to_read(result)
 
 
 @router.post("/google/connect", response_model=IntegrationRead)
@@ -80,103 +106,80 @@ def connect_google(
     actor: ActorDependency,
     db: DbSession,
 ) -> IntegrationRead:
-    oauth = GoogleOAuthService()
+    use_case = ConnectGoogleIntegration(
+        repository=IntegrationRepository(db),
+        oauth=GoogleOAuthService(),
+        unit_of_work=db,
+    )
     try:
-        token = oauth.exchange_code(request.auth_code, request.redirect_uri)
-    except ValueError as exc:
+        result = use_case.execute(
+            actor,
+            ConnectGoogleCommand(
+                auth_code=request.auth_code,
+                redirect_uri=request.redirect_uri,
+                scope=request.scope,
+            ),
+        )
+    except OAuthCodeExchangeFailedError as exc:
         raise HTTPException(
             status_code=400,
-            detail=problem_details(
-                error_code="OAUTH_CODE_EXCHANGE_FAILED",
-                detail=str(exc),
-            ).to_dict(),
+            detail=problem_details(error_code="OAUTH_CODE_EXCHANGE_FAILED", detail=str(exc)).to_dict(),
         ) from exc
-
-    row = IntegrationRepository(db).upsert_google(
-        user_id=actor.user_id,
-        access_token=token["access_token"],
-        refresh_token=token["refresh_token"],
-        scope=token.get("scope") or request.scope,
-        token_type=token["token_type"],
-        expires_at=token["expires_at"],
-    )
-    return IntegrationRead.model_validate(row)
+    return _to_read(result)
 
 
 @router.post("/{provider}/refresh", response_model=IntegrationRead)
 def refresh_integration(provider: str, actor: ActorDependency, db: DbSession) -> IntegrationRead:
-    repo = IntegrationRepository(db)
-    row = repo.get_by_provider(user_id=actor.user_id, provider=provider)
-    if not row:
+    use_case = RefreshIntegration(
+        repository=IntegrationRepository(db),
+        oauth=GoogleOAuthService(),
+        unit_of_work=db,
+    )
+    try:
+        result = use_case.execute(actor, RefreshIntegrationCommand(provider=provider))
+    except IntegrationNotFoundError as exc:
         raise HTTPException(
             status_code=404,
-            detail=problem_details(
-                error_code="INTEGRATION_NOT_FOUND",
-                detail=f"Integration {provider} not found",
-            ).to_dict(),
-        )
-
-    if provider != "google":
-        raise HTTPException(
-            status_code=400,
-            detail=problem_details(
-                error_code="UNSUPPORTED_INTEGRATION",
-                detail="Only google refresh is supported in MVP",
-            ).to_dict(),
-        )
-
-    tokens = repo.get_decrypted_tokens(row)
-    if not tokens["refresh_token"]:
-        raise HTTPException(
-            status_code=400,
-            detail=problem_details(
-                error_code="REFRESH_TOKEN_NOT_AVAILABLE",
-                detail="Refresh token not available",
-            ).to_dict(),
-        )
-
-    oauth = GoogleOAuthService()
-    try:
-        refreshed = oauth.refresh_token(tokens["refresh_token"])
-    except ValueError as exc:
-        raise HTTPException(
-            status_code=400,
-            detail=problem_details(
-                error_code="OAUTH_TOKEN_REFRESH_FAILED",
-                detail=str(exc),
-            ).to_dict(),
+            detail=problem_details(error_code="INTEGRATION_NOT_FOUND", detail=str(exc)).to_dict(),
         ) from exc
-
-    updated = repo.update_tokens(
-        row=row,
-        access_token=refreshed["access_token"],
-        refresh_token=refreshed["refresh_token"],
-        expires_at=refreshed["expires_at"],
-    )
-    return IntegrationRead.model_validate(updated)
+    except UnsupportedIntegrationError as exc:
+        raise HTTPException(
+            status_code=400,
+            detail=problem_details(error_code="UNSUPPORTED_INTEGRATION", detail=str(exc)).to_dict(),
+        ) from exc
+    except RefreshTokenUnavailableError as exc:
+        raise HTTPException(
+            status_code=400,
+            detail=problem_details(error_code="REFRESH_TOKEN_NOT_AVAILABLE", detail=str(exc)).to_dict(),
+        ) from exc
+    except OAuthTokenRefreshFailedError as exc:
+        raise HTTPException(
+            status_code=400,
+            detail=problem_details(error_code="OAUTH_TOKEN_REFRESH_FAILED", detail=str(exc)).to_dict(),
+        ) from exc
+    return _to_read(result)
 
 
 @router.post("/{provider}/revoke", response_model=IntegrationRead)
 def revoke_integration(provider: str, actor: ActorDependency, db: DbSession) -> IntegrationRead:
-    repo = IntegrationRepository(db)
-    row = repo.get_by_provider(user_id=actor.user_id, provider=provider)
-    if not row:
+    use_case = RevokeIntegration(
+        repository=IntegrationRepository(db),
+        unit_of_work=db,
+    )
+    try:
+        result = use_case.execute(actor, RevokeIntegrationCommand(provider=provider))
+    except IntegrationNotFoundError as exc:
         raise HTTPException(
             status_code=404,
-            detail=problem_details(
-                error_code="INTEGRATION_NOT_FOUND",
-                detail=f"Integration {provider} not found",
-            ).to_dict(),
-        )
-
-    revoked = repo.revoke(row)
-    return IntegrationRead.model_validate(revoked)
+            detail=problem_details(error_code="INTEGRATION_NOT_FOUND", detail=str(exc)).to_dict(),
+        ) from exc
+    return _to_read(result)
 
 
 @router.get("", response_model=list[IntegrationRead])
 def list_integrations(actor: ActorDependency, db: DbSession) -> list[IntegrationRead]:
-    rows = IntegrationRepository(db).list_for_user(user_id=actor.user_id)
-    return [IntegrationRead.model_validate(row) for row in rows]
+    use_case = ListIntegrations(repository=IntegrationRepository(db))
+    return [_to_read(r) for r in use_case.execute(actor)]
 
 
 @router.post("/google/sync", response_model=GoogleSyncResponse)

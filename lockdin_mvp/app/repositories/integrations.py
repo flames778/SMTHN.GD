@@ -38,7 +38,7 @@ class IntegrationRepository:
             existing.status = "connected"
             existing.updated_at = datetime.now(timezone.utc)
             self.db.add(existing)
-            self.db.commit()
+            self.db.flush()
             self.db.refresh(existing)
             return existing
 
@@ -53,7 +53,7 @@ class IntegrationRepository:
             status="connected",
         )
         self.db.add(row)
-        self.db.commit()
+        self.db.flush()
         self.db.refresh(row)
         return row
 
@@ -86,7 +86,7 @@ class IntegrationRepository:
         row.status = "connected"
         row.updated_at = datetime.now(timezone.utc)
         self.db.add(row)
-        self.db.commit()
+        self.db.flush()
         self.db.refresh(row)
         return row
 
@@ -96,7 +96,7 @@ class IntegrationRepository:
         row.refresh_token = self._encryption.encrypt("")
         row.updated_at = datetime.now(timezone.utc)
         self.db.add(row)
-        self.db.commit()
+        self.db.flush()
         self.db.refresh(row)
         return row
 

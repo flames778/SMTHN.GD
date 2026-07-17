@@ -35,7 +35,7 @@ class ConsentRepository:
             existing.revoked_at = now if not granted else None
             existing.updated_at = now
             self.db.add(existing)
-            self.db.commit()
+            self.db.flush()
             self.db.refresh(existing)
             return existing
 
@@ -49,7 +49,7 @@ class ConsentRepository:
             revoked_at=now if not granted else None,
         )
         self.db.add(row)
-        self.db.commit()
+        self.db.flush()
         self.db.refresh(row)
         return row
 
@@ -84,5 +84,5 @@ class ConsentRepository:
             return False
 
         self.db.delete(row)
-        self.db.commit()
+        self.db.flush()
         return True
