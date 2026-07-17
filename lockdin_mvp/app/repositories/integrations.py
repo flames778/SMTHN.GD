@@ -3,12 +3,15 @@ from datetime import datetime, timezone
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
+from app.core.config import get_settings
 from app.db.models import IntegrationTokenModel
+from app.security.token_encryption import TokenEncryption
 
 
 class IntegrationRepository:
     def __init__(self, db: Session) -> None:
         self.db = db
+        self._encryption = TokenEncryption(get_settings().app_encryption_key)
 
     def upsert_google(
         self,
@@ -27,8 +30,8 @@ class IntegrationRepository:
         ).scalar_one_or_none()
 
         if existing:
-            existing.access_token = access_token
-            existing.refresh_token = refresh_token
+            existing.access_token = self._encryption.encrypt(access_token)
+            existing.refresh_token = self._encryption.encrypt(refresh_token)
             existing.scope = scope
             existing.token_type = token_type
             existing.expires_at = expires_at
@@ -42,8 +45,8 @@ class IntegrationRepository:
         row = IntegrationTokenModel(
             user_id=user_id,
             provider="google",
-            access_token=access_token,
-            refresh_token=refresh_token,
+            access_token=self._encryption.encrypt(access_token),
+            refresh_token=self._encryption.encrypt(refresh_token),
             scope=scope,
             token_type=token_type,
             expires_at=expires_at,
@@ -77,8 +80,8 @@ class IntegrationRepository:
         refresh_token: str,
         expires_at: datetime | None,
     ) -> IntegrationTokenModel:
-        row.access_token = access_token
-        row.refresh_token = refresh_token
+        row.access_token = self._encryption.encrypt(access_token)
+        row.refresh_token = self._encryption.encrypt(refresh_token)
         row.expires_at = expires_at
         row.status = "connected"
         row.updated_at = datetime.now(timezone.utc)
@@ -89,10 +92,17 @@ class IntegrationRepository:
 
     def revoke(self, row: IntegrationTokenModel) -> IntegrationTokenModel:
         row.status = "revoked"
-        row.access_token = ""
-        row.refresh_token = ""
+        row.access_token = self._encryption.encrypt("")
+        row.refresh_token = self._encryption.encrypt("")
         row.updated_at = datetime.now(timezone.utc)
         self.db.add(row)
         self.db.commit()
         self.db.refresh(row)
         return row
+
+    def get_decrypted_tokens(self, row: IntegrationTokenModel) -> dict[str, str | None]:
+        """Retrieve decrypted tokens from an integration row."""
+        return {
+            "access_token": self._encryption.decrypt(row.access_token),
+            "refresh_token": self._encryption.decrypt(row.refresh_token),
+        }

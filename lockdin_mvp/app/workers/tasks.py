@@ -25,8 +25,12 @@ def sync_google_integrations(user_id: str) -> dict[str, int | str]:
         integration_repo = IntegrationRepository(db)
         consent_repo = ConsentRepository(db)
         integration = integration_repo.get_by_provider(user_id=user_id, provider="google")
-        if not integration or integration.status != "connected" or not integration.access_token:
+        if not integration or integration.status != "connected":
             return {"status": "skipped", "reason": "google integration not connected", "calendar": 0, "gmail": 0}
+
+        tokens = integration_repo.get_decrypted_tokens(integration)
+        if not tokens["access_token"]:
+            return {"status": "skipped", "reason": "access token not available", "calendar": 0, "gmail": 0}
 
         sync_service = IntegrationSyncService(db)
         calendar_count = 0
@@ -38,7 +42,7 @@ def sync_google_integrations(user_id: str) -> dict[str, int | str]:
             data_category="calendar",
             purpose="sync",
         ):
-            calendar_count = sync_service.sync_google_calendar(integration.access_token)
+            calendar_count = sync_service.sync_google_calendar(tokens["access_token"])
 
         if consent_repo.is_granted(
             user_id=user_id,
@@ -46,7 +50,7 @@ def sync_google_integrations(user_id: str) -> dict[str, int | str]:
             data_category="gmail",
             purpose="sync",
         ):
-            gmail_count = sync_service.sync_gmail(integration.access_token)
+            gmail_count = sync_service.sync_gmail(tokens["access_token"])
 
         return {"status": "ok", "calendar": calendar_count, "gmail": gmail_count}
     finally:

@@ -37,6 +37,8 @@ class Settings(BaseSettings):
     def validate_encryption_key(self) -> "Settings":
         if len(self.app_encryption_key.strip()) < 32:
             raise ValueError("APP_ENCRYPTION_KEY must be at least 32 characters")
+        if not self.app_encryption_key:
+            raise ValueError("APP_ENCRYPTION_KEY is required")
         return self
 
     def validate_startup_config(self) -> None:

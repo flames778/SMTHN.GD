@@ -2,7 +2,29 @@
 
 All notable changes to this project are documented in this file.
 
-## Unreleased - M1 Identity Persistence
+## Unreleased - M1 Token Encryption
+
+### Added
+- `TokenEncryption` service with Fernet (AES-128-CBC + HMAC-SHA256) symmetric encryption.
+- Automatic encryption of OAuth tokens on storage via `IntegrationRepository`.
+- Transparent decryption via `get_decrypted_tokens()` for token consumption.
+- Comprehensive test suite: 10 tests for encryption service, 6 for encrypted repository.
+- Production KMS custody documentation with Azure Key Vault recommendations.
+- `APP_ENCRYPTION_KEY` environment variable to environment inventory.
+
+### Changed
+- `IntegrationRepository.upsert_google()` now encrypts tokens before persistence.
+- `IntegrationRepository.update_tokens()` encrypts new token values.
+- `/api/integrations/{provider}/refresh` endpoint decrypts refresh token before OAuth exchange.
+- `sync_google_integrations()` worker decrypts access token before integration sync.
+- Configuration validation now enforces non-empty `APP_ENCRYPTION_KEY`.
+
+### Security
+- OAuth tokens (access_token, refresh_token) no longer stored in plaintext.
+- Encryption transparent to API consumers; token schema unchanged.
+- Database breach no longer exposes valid OAuth tokens without `APP_ENCRYPTION_KEY`.
+
+## 2026-07-17 - M1 Identity Persistence
 
 ### Added
 - Persistent users, devices, sessions, and conversations schema.

@@ -94,9 +94,13 @@ def refresh_integration(provider: str, actor: ActorDependency, db: DbSession) ->
     if provider != "google":
         raise HTTPException(status_code=400, detail="Only google refresh is supported in MVP")
 
+    tokens = repo.get_decrypted_tokens(row)
+    if not tokens["refresh_token"]:
+        raise HTTPException(status_code=400, detail="Refresh token not available")
+
     oauth = GoogleOAuthService()
     try:
-        refreshed = oauth.refresh_token(row.refresh_token)
+        refreshed = oauth.refresh_token(tokens["refresh_token"])
     except ValueError as exc:
         raise HTTPException(status_code=400, detail=str(exc)) from exc
 
