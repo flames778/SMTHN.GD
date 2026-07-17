@@ -1,6 +1,8 @@
 [submodule "DeepSeek-V4-Pro"]
 	path = DeepSeek-V4-Pro
 	url = https://huggingface.co/deepseek-ai/DeepSeek-V4-Pro
+	ignore = all
 [submodule "csm"]
 	path = csm
 	url = https://github.com/SesameAILabs/csm.git
+	ignore = all

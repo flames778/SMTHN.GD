@@ -52,9 +52,9 @@ pip install -r requirements.txt --no-deps
 pip install openai-whisper sounddevice soundfile
 ```
 
-4. Place DeepSeek checkpoints
+4. DeepSeek V4 asset status
 
-Put your DeepSeek checkpoint directory at `./DeepSeek-V4-Pro` (contains `model0-mp1.safetensors` and friends) and ensure `./DeepSeek-V4-Pro/inference/config.json` exists.
+`./DeepSeek-V4-Pro` currently contains the V4 tokenizer, encoding, configuration, and inference source, but not model weights. DeepSeek V4 Pro is a 1.6T-parameter model whose reference runtime is CUDA/model-parallel and requires Torch 2.10+ and Transformers 5+ in a dedicated environment.
 
 5. (Optional) Set Hugging Face token for downloads
 
@@ -69,11 +69,13 @@ Run Jarvis (dry-run, fast)
 python jarvis.py --dry-run
 ```
 
-Run full Jarvis (real models)
+Legacy local model command (not currently runnable)
 
 ```bash
 python jarvis.py --ds-ckpt ./DeepSeek-V4-Pro --ds-config ./DeepSeek-V4-Pro/inference/config.json
 ```
+
+Do not use this command until compatible checkpoint shards and a dedicated provider runtime are configured. The legacy Jarvis loader is a migration source; production integration belongs behind the M4 model adapter.
 
 Fetching large assets for team
  - To avoid committing large binary files to git, use the provided script `scripts/fetch_assets.sh`.
@@ -101,7 +103,8 @@ Flags
 
 Notes
 - On macOS, generated audio is played automatically with `afplay` (non-dry runs).
-- CPU-only inference for large models may be slow; prefer machines with GPUs or Apple MPS where available.
+- DeepSeek V4 Pro is not a CPU or single-consumer-GPU runtime target. Use a dedicated multi-GPU provider process or a hosted adapter.
+- The `csm/` checkout is currently unavailable, so Sesame voice runs only in fallback/mock mode.
 
 If you want, I can help automate environment setup or run a full end-to-end test if you provide model checkpoints and confirm you want me to proceed.
 

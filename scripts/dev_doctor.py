@@ -28,7 +28,9 @@ def check_command(name: str, help_arg: str = "--version") -> dict[str, str]:
         return {"name": name, "status": "fail", "details": "not found in PATH"}
 
     try:
-        output = subprocess.check_output([cmd, help_arg], stderr=subprocess.STDOUT, text=True, timeout=5)
+        output = subprocess.check_output(
+            [cmd, help_arg], stderr=subprocess.STDOUT, text=True, timeout=5
+        )
         first_line = output.splitlines()[0] if output else "version check completed"
         return {"name": name, "status": "pass", "details": first_line}
     except Exception as exc:  # pragma: no cover
@@ -55,17 +57,49 @@ def check_port(host: str, port: int, service: str) -> dict[str, str]:
         sock.close()
 
 
-def check_model_assets() -> dict[str, str]:
+def check_deepseek_assets() -> dict[str, str]:
     deepseek = ROOT / "DeepSeek-V4-Pro"
-    csm = ROOT / "csm"
-    missing = [str(path.name) for path in (deepseek, csm) if not path.exists()]
-    if missing:
+    required_source = [
+        deepseek / "inference" / "model.py",
+        deepseek / "inference" / "generate.py",
+        deepseek / "encoding" / "encoding_dsv4.py",
+    ]
+    if not deepseek.exists() or any(not path.exists() for path in required_source):
         return {
-            "name": "model-assets",
+            "name": "deepseek-runtime",
             "status": "warn",
-            "details": f"missing directories: {', '.join(missing)}",
+            "details": "DeepSeek V4 inference source is incomplete",
         }
-    return {"name": "model-assets", "status": "pass", "details": "DeepSeek and CSM folders present"}
+
+    checkpoint_shards = list(deepseek.glob("model*-mp*.safetensors"))
+    if not checkpoint_shards:
+        return {
+            "name": "deepseek-runtime",
+            "status": "warn",
+            "details": "V4 source is present; checkpoint shards are absent",
+        }
+
+    return {
+        "name": "deepseek-runtime",
+        "status": "pass",
+        "details": f"V4 source and {len(checkpoint_shards)} checkpoint shard(s) present",
+    }
+
+
+def check_csm_assets() -> dict[str, str]:
+    csm = ROOT / "csm"
+    generator = csm / "generator.py"
+    if not generator.exists():
+        return {
+            "name": "csm-runtime",
+            "status": "warn",
+            "details": "CSM checkout is unavailable; voice uses fallback mode",
+        }
+    return {
+        "name": "csm-runtime",
+        "status": "pass",
+        "details": "CSM generator source is present",
+    }
 
 
 def summarize(results: list[dict[str, str]], allow_warn: bool) -> int:
@@ -82,7 +116,9 @@ def summarize(results: list[dict[str, str]], allow_warn: bool) -> int:
 
 
 def main() -> int:
-    parser = argparse.ArgumentParser(description="Validate local Lockd'In development prerequisites.")
+    parser = argparse.ArgumentParser(
+        description="Validate local Lockd'In development prerequisites."
+    )
     parser.add_argument(
         "--allow-warn",
         action="store_true",
@@ -97,7 +133,8 @@ def main() -> int:
     checks.append(check_command("git"))
     checks.append(check_port("127.0.0.1", 5432, "postgres"))
     checks.append(check_port("127.0.0.1", 6379, "redis"))
-    checks.append(check_model_assets())
+    checks.append(check_deepseek_assets())
+    checks.append(check_csm_assets())
     checks.append(check_port("127.0.0.1", 8000, "lockdin-api"))
     checks.append(check_port("127.0.0.1", 3000, "lockdin-web"))
 
