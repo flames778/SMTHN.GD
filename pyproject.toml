@@ -59,6 +59,7 @@ select = ["E", "F", "I", "UP", "B"]
 
 [tool.pytest.ini_options]
 testpaths = ["apps/backend/tests", "lockdin_mvp/tests"]
+pythonpath = ["lockdin_mvp", "apps/backend"]
 
 [tool.mypy]
 python_version = "3.11"

@@ -5,20 +5,28 @@ Provides database fixtures, factory functions for test data, and FastAPI TestCli
 
 from __future__ import annotations
 
+import os
 from collections.abc import Generator
+from pathlib import Path
 
 import pytest
+from dotenv import load_dotenv
 from fastapi.testclient import TestClient
 from sqlalchemy import create_engine
 from sqlalchemy.orm import Session, sessionmaker
 from sqlalchemy.pool import StaticPool
 
-from app.db.base import Base as MVPBase
-from app.db.session import get_db
-from app.main import app
-from lockdin_backend.persistence.base import Base as IdentityBase
-from lockdin_backend.persistence.database import get_identity_db
-from lockdin_backend.persistence.identity import IdentityRepository
+# Load .env before importing any app module that accesses settings at module level
+_env_path = Path(__file__).parent.parent / ".env"
+if _env_path.exists():
+    load_dotenv(_env_path, override=False)
+
+from app.db.base import Base as MVPBase  # noqa: E402
+from app.db.session import get_db  # noqa: E402
+from app.main import app  # noqa: E402
+from lockdin_backend.persistence.base import Base as IdentityBase  # noqa: E402
+from lockdin_backend.persistence.database import get_identity_db  # noqa: E402
+from lockdin_backend.persistence.identity import IdentityRepository  # noqa: E402
 
 
 @pytest.fixture
