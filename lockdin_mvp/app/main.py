@@ -6,11 +6,13 @@ from lockdin_backend.api.session_routes import router as session_router
 from starlette.middleware.cors import CORSMiddleware
 
 from app.api.consent import router as consent_router
+from app.api.health import router as health_router
 from app.api.integrations import router as integrations_router
 from app.api.problem_details_handlers import register_problem_details_handlers
 from app.core.config import get_settings
 from app.core.logging import CorrelationIdMiddleware
 from app.security.cors import get_cors_config
+from app.security.idempotency import IdempotencyMiddleware
 from app.security.request_boundaries import (
     RateLimitMiddleware,
     RequestSizeLimitMiddleware,
@@ -36,17 +38,16 @@ app.add_middleware(RequestSizeLimitMiddleware, max_size_bytes=10 * 1024 * 1024)
 app.add_middleware(RateLimitMiddleware, max_requests=1000, window_seconds=60)
 # Note: TrustedHostMiddleware disabled by default (pass trusted_hosts=[] to enable with custom list)
 
+# Idempotency: replay duplicate mutation responses within 24h
+app.add_middleware(IdempotencyMiddleware)
+
 # Correlation ID middleware for request tracing
 app.add_middleware(CorrelationIdMiddleware)
 
 # Register RFC 9457 Problem Details exception handlers
 register_problem_details_handlers(app)
 
+app.include_router(health_router)
 app.include_router(integrations_router)
 app.include_router(consent_router)
 app.include_router(session_router)
-
-
-@app.get("/health")
-def health() -> dict[str, str]:
-    return {"status": "ok"}

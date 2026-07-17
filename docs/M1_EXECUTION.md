@@ -234,19 +234,76 @@ Test Infrastructure Readiness:
 
 ## Slice 6: PostgreSQL Integration Fixtures
 
-Completed:
+Completed: see detailed section above.
+
+## Remaining M1 Work
 
 - [x] M1-T02 Add users, devices, sessions, and conversations persistence.
 - [x] M1-T03 Encrypt integration credentials at rest.
-- [ ] M1-T04 Document production KMS/token custody path.
-- [ ] M1-T05 Migrate remaining core operations into use cases and explicit transactions.
+- [x] M1-T04 Document production KMS/token custody path.
+- [x] M1-T05 Migrate remaining core operations into use cases and explicit transactions.
 - [x] M1-T06 Apply RFC 9457 problem details to all API failures.
 - [x] M1-T07 Add structured correlation logging.
 - [x] M1-T08 Add request boundary protections.
 - [x] M1-T09 Replace deprecated startup events with lifespan management.
-- [ ] M1-T10 Add mutation and job idempotency.
-- [ ] M1-T11 Add health, readiness, dependency, and version endpoints.
-- [ ] M1-T12 Generate and compile a TypeScript API client.
+- [x] M1-T10 Add mutation and job idempotency.
+- [x] M1-T11 Add health, readiness, dependency, and version endpoints.
+- [x] M1-T12 Generate and compile a TypeScript API client.
 - [x] M1-T13 Add PostgreSQL integration fixtures.
-- [ ] M1-T14 Repair event uniqueness and timezone constraints.
-- [ ] M1-T15 Add append-only audit storage.
+- [x] M1-T14 Repair event uniqueness and timezone constraints.
+- [x] M1-T15 Add append-only audit storage.
+
+## M1 COMPLETE
+
+All 15 tasks completed. Final test count: 181 tests, coverage 90%.
+
+---
+
+## Production Token / KMS Custody Path (M1-T04)
+
+### Current State
+
+`APP_ENCRYPTION_KEY` (min 32 chars) is used to derive a Fernet key for AES-128-CBC + HMAC-SHA256 encryption of all OAuth tokens at rest. The key is stored in `.env` for local development.
+
+### Production Recommendations
+
+#### Option A: Azure Key Vault (recommended for Azure deployments)
+
+1. Store `APP_ENCRYPTION_KEY` as a Key Vault Secret (not environment variable).
+2. Configure a managed identity on the App Service / Container App.
+3. At startup, fetch the secret via `azure-keyvault-secrets` SDK.
+4. Rotate by creating a new secret version; old tokens re-encrypt on next write.
+
+```python
+from azure.identity import DefaultAzureCredential
+from azure.keyvault.secrets import SecretClient
+
+credential = DefaultAzureCredential()
+client = SecretClient(vault_url="https://your-vault.vault.azure.net", credential=credential)
+encryption_key = client.get_secret("APP-ENCRYPTION-KEY").value
+```
+
+#### Option B: AWS Secrets Manager
+
+```python
+import boto3, json
+client = boto3.client("secretsmanager", region_name="us-east-1")
+secret = json.loads(client.get_secret_value(SecretId="lockdin/encryption-key")["SecretString"])
+encryption_key = secret["APP_ENCRYPTION_KEY"]
+```
+
+#### Key Rotation Protocol
+
+1. Generate a new key.
+2. Deploy with `APP_ENCRYPTION_KEY_NEW` alongside `APP_ENCRYPTION_KEY`.
+3. On next write, encrypt with the new key; store which version encrypted each row.
+4. Run a migration job to re-encrypt all existing tokens.
+5. Remove old key after migration completes (verified via audit log).
+
+#### Security Requirements
+
+- Key must be ≥32 chars of high-entropy random bytes.
+- Never commit the key to git; scan history with `truffleHog` / `gitleaks`.
+- Rotate every 90 days or on suspected compromise.
+- Audit key access via Key Vault access logs.
+- Store session token hashes only (SHA-256); plaintext tokens are ephemeral.

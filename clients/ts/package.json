@@ -1,0 +1,15 @@
+{
+  "name": "@lockdin/api-client",
+  "version": "0.1.0",
+  "description": "Auto-generated TypeScript API client types for the Lockd'In MVP API",
+  "private": true,
+  "main": "./api.d.ts",
+  "types": "./api.d.ts",
+  "scripts": {
+    "generate": "openapi-typescript ../../openapi.json --output api.d.ts"
+  },
+  "devDependencies": {
+    "openapi-typescript": "^7.13.0",
+    "typescript": "^5.0.0"
+  }
+}
