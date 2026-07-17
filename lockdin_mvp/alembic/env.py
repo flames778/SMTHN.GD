@@ -7,6 +7,8 @@ from sqlalchemy import engine_from_config, pool
 
 from app.db.base import Base
 from app.db import models  # noqa: F401
+from lockdin_backend.persistence.base import Base as BackendBase
+from lockdin_backend.persistence import models as backend_models  # noqa: F401
 
 config = context.config
 load_dotenv()
@@ -18,7 +20,7 @@ if database_url:
 if config.config_file_name is not None:
     fileConfig(config.config_file_name)
 
-target_metadata = Base.metadata
+target_metadata = [Base.metadata, BackendBase.metadata]
 
 
 def run_migrations_offline() -> None:

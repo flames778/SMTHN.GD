@@ -15,6 +15,7 @@ jobs:
       DATABASE_URL: "postgresql+psycopg://lockdin:lockdin@localhost:5432/lockdin_test"
       REDIS_URL: "redis://localhost:6379/15"
       APP_ENCRYPTION_KEY: "ci-only-encryption-key-32-characters"
+      APP_BOOTSTRAP_TOKEN: "ci-only-bootstrap-token-32-characters"
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
