@@ -73,13 +73,65 @@ Security Boundary
 
 Integration tokens are now encrypted at rest using a 256-bit key derived from `APP_ENCRYPTION_KEY`. Production deployment should use Azure Key Vault (or equivalent) to store and rotate the master key. Tokens remain plaintext only during issuance and use; plaintext never persists to disk.
 
+## Slice 4: RFC 9457 Problem Details for API Failures
+
+Completed:
+
+- Implemented RFC 9457 Problem Details model with canonical structure.
+  - Fields: `type` (URI), `status` (int), `title` (string), `detail` (optional), `instance` (optional), `error_code` (machine ID), `correlation_id` (tracing).
+- Created comprehensive exception handlers for FastAPI:
+  - `ProblemDetailsException` handler for explicit problem details responses.
+  - `HTTPException` handler with automatic status-code-to-error-code mapping.
+  - Generic exception handler for unexpected exceptions.
+- Implemented error code mapping (15+ codes) with HTTP status inference:
+  - `OAUTH_STATE_INVALID` (400), `OAUTH_CODE_EXCHANGE_FAILED` (400), `OAUTH_TOKEN_REFRESH_FAILED` (400)
+  - `INTEGRATION_NOT_FOUND` (404), `CONSENT_RECORD_NOT_FOUND` (404), `NOT_FOUND` (404)
+  - `UNAUTHORIZED` (401), `FORBIDDEN` (403), `CONFLICT` (409)
+  - `BOOTSTRAP_FAILED` (503), `SERVICE_UNAVAILABLE` (503), `INTERNAL_SERVER_ERROR` (500)
+  - Plus additional error codes for specific failure modes.
+- Implemented problem details factory with kebab-case URL conversion:
+  - `error_code.lower().replace("_", "-")` converts snake_case to kebab-case.
+  - Type URL format: `https://api.lockdin.ai/errors/{kebab-case-error-code}`.
+  - Example: `OAUTH_STATE_INVALID` → `https://api.lockdin.ai/errors/oauth-state-invalid`.
+- Updated all API routes to return RFC 9457 responses:
+  - **Migration-source (MVP):** 
+    - `integrations.py`: 5 endpoints (Google OAuth callbacks, token refresh, revoke, authorize-url).
+    - `consent.py`: 1 endpoint (delete consent).
+  - **Canonical Backend:**
+    - `session_routes.py`: 3 endpoints (bootstrap, session management).
+    - `dependencies.py`: 1 endpoint (actor context injection with authorization).
+- Created comprehensive test suite (9 tests, all passing):
+  - Test ProblemDetails model, factory function, and error code mapping.
+  - Test exception handlers for HTTPException and ProblemDetailsException.
+  - Test status-code-to-error-code inference and kebab-case type URL generation.
+- Updated existing tests to validate RFC 9457 format (fixed 3 test failures).
+
+Validation:
+
+- Problem details tests: 9/9 pass.
+- Actor context and dependency tests: 4/4 pass (updated for RFC 9457).
+- Full test suite: 45 tests pass (36 from Slices 1-3 + 9 new).
+- Combined coverage maintained at ≥72% (from Slice 3).
+- No breaking changes to client contracts; error responses now include machine-readable codes.
+
+API Reliability Improvement:
+
+- All API errors now return structured, machine-readable responses per RFC 9457.
+- Improves observability: error_code + correlation_id enable structured logging and alerting.
+- Clients can now programmatically handle errors based on error_code (not just HTTP status).
+- Type URIs enable machine lookup of error documentation.
+
+## Security Boundary
+
+Error responses now consistently include correlation_id for request tracing without leaking internal stack traces. Clients receive machine-readable error_code alongside human-readable title and detail, enabling better UX and monitoring. The detail field is safe to expose; stack traces remain internal only.
+
 ## Remaining M1 Work
 
 - [x] M1-T02 Add users, devices, sessions, and conversations persistence.
 - [x] M1-T03 Encrypt integration credentials at rest.
 - [ ] M1-T04 Document production KMS/token custody path.
 - [ ] M1-T05 Migrate remaining core operations into use cases and explicit transactions.
-- [ ] M1-T06 Apply RFC 9457 problem details to all API failures.
+- [x] M1-T06 Apply RFC 9457 problem details to all API failures.
 - [ ] M1-T07 Add structured correlation logging.
 - [ ] M1-T08 Add request boundary protections.
 - [x] M1-T09 Replace deprecated startup events with lifespan management.

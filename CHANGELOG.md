@@ -2,6 +2,36 @@
 
 All notable changes to this project are documented in this file.
 
+## Unreleased - M1 RFC 9457 Problem Details
+
+### Added
+- RFC 9457 Problem Details model for standardized HTTP error responses.
+- Comprehensive FastAPI exception handlers:
+  - `ProblemDetailsException` handler for explicit problem details.
+  - `HTTPException` handler with automatic status-to-error-code mapping.
+  - Generic exception handler for unexpected errors.
+- Error code mapping (15+) with HTTP status code inference:
+  - OAuth errors: OAUTH_STATE_INVALID, OAUTH_CODE_EXCHANGE_FAILED, OAUTH_TOKEN_REFRESH_FAILED.
+  - Integration errors: INTEGRATION_NOT_FOUND, UNSUPPORTED_INTEGRATION, REFRESH_TOKEN_NOT_AVAILABLE.
+  - Authorization: UNAUTHORIZED, FORBIDDEN, INVALID_SETUP_SECRET.
+  - Server: BOOTSTRAP_FAILED, INTERNAL_SERVER_ERROR, SERVICE_UNAVAILABLE.
+- Problem details factory with kebab-case type URL conversion.
+- Correlation ID support for request tracing (optional).
+- Comprehensive test suite (9 tests, all passing).
+
+### Changed
+- All API error responses now return RFC 9457 Problem Details format.
+- Error type URIs: `https://api.lockdin.ai/errors/{kebab-case-error-code}`.
+- HTTP status inference from error codes (e.g., UNAUTHORIZED → 401).
+- Migration-source (MVP) routes: integrations (5), consent (1).
+- Canonical backend routes: session routes (3), actor dependency (1).
+- Exception handlers registered in main.py and test apps.
+
+### Security
+- Error responses include correlation_id for structured tracing without exposing stack traces.
+- Machine-readable error_code enables client-side error handling and logging.
+- detail field is safe to expose; internal traces remain server-side only.
+
 ## Unreleased - M1 Token Encryption
 
 ### Added
