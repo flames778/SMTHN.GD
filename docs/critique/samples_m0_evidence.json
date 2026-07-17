@@ -1,0 +1,4 @@
+{
+  "Secret Safety": "CI gitleaks enabled and pre-commit gitleaks hook present",
+  "Developer Experience": "doctor and critique scripts added"
+}

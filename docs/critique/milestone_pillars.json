@@ -1,0 +1,182 @@
+{
+  "version": "1.0.0",
+  "scale": "0-5",
+  "scale_meaning": {
+    "0": "missing",
+    "1": "ad hoc",
+    "2": "partial",
+    "3": "acceptable",
+    "4": "strong",
+    "5": "exemplary"
+  },
+  "milestones": {
+    "M0": {
+      "goal": "Repository truth, security, and development baseline.",
+      "pass_score": 80,
+      "pillars": [
+        {"name": "Repository Hygiene", "weight": 0.18, "checks": ["Root ignores are correct", "No accidental binary/vendor churn"]},
+        {"name": "Secret Safety", "weight": 0.22, "checks": ["Secret scans in CI", "No real credentials in tracked files"]},
+        {"name": "Developer Experience", "weight": 0.15, "checks": ["Single doctor command", "Setup path is documented"]},
+        {"name": "Build Reproducibility", "weight": 0.15, "checks": ["Python version pinned", "Dependencies centralized"]},
+        {"name": "Architecture Governance", "weight": 0.15, "checks": ["ADRs created", "Canonical docs referenced"]},
+        {"name": "Migration Clarity", "weight": 0.15, "checks": ["Legacy entrypoints marked", "Destination paths defined"]}
+      ]
+    },
+    "M1": {
+      "goal": "Secure, testable backend foundations.",
+      "pass_score": 82,
+      "pillars": [
+        {"name": "Identity Integrity", "weight": 0.18, "checks": ["No hardcoded user IDs", "Actor context flows end-to-end"]},
+        {"name": "Data Security", "weight": 0.2, "checks": ["Token encryption at rest", "Secrets redacted in logs"]},
+        {"name": "API Reliability", "weight": 0.17, "checks": ["Problem details responses", "Idempotency for mutations"]},
+        {"name": "Schema Correctness", "weight": 0.15, "checks": ["Constraints reflect domain", "Timezone/source constraints covered"]},
+        {"name": "Observability", "weight": 0.15, "checks": ["Structured logs", "Health/readiness endpoints"]},
+        {"name": "Test Depth", "weight": 0.15, "checks": ["Unit and integration fixtures", "Core use cases validated"]}
+      ]
+    },
+    "M2": {
+      "goal": "Product shell and living core prototype.",
+      "pass_score": 80,
+      "pillars": [
+        {"name": "Visual System Fidelity", "weight": 0.18, "checks": ["Tokens applied consistently", "Runtime states are legible"]},
+        {"name": "Interaction Clarity", "weight": 0.17, "checks": ["Navigation coherence", "Clear control affordances"]},
+        {"name": "Accessibility", "weight": 0.18, "checks": ["Keyboard focus path", "2D fallback for critical controls"]},
+        {"name": "Performance", "weight": 0.17, "checks": ["Scene FPS target met", "Dynamic quality behavior"]},
+        {"name": "Responsiveness", "weight": 0.15, "checks": ["Desktop/mobile layouts valid", "No clipping/overlap"]},
+        {"name": "Testability", "weight": 0.15, "checks": ["Visual regression checks", "Nonblank canvas checks"]}
+      ]
+    },
+    "M3": {
+      "goal": "Windows shell and local capability host.",
+      "pass_score": 82,
+      "pillars": [
+        {"name": "Local Security Boundary", "weight": 0.2, "checks": ["Local-only host access", "Per-installation auth keys"]},
+        {"name": "Desktop Reliability", "weight": 0.18, "checks": ["Crash recovery", "Heartbeat supervision"]},
+        {"name": "User Control", "weight": 0.15, "checks": ["Autostart opt-in", "Tray status controls"]},
+        {"name": "Operational Diagnostics", "weight": 0.15, "checks": ["Restart/status visibility", "Error surfacing"]},
+        {"name": "Resource Efficiency", "weight": 0.16, "checks": ["Idle CPU budget", "Idle memory budget"]},
+        {"name": "Distribution Readiness", "weight": 0.16, "checks": ["Update channel design", "Signing plan documented"]}
+      ]
+    },
+    "M4": {
+      "goal": "Conversation runtime and model routing.",
+      "pass_score": 82,
+      "pillars": [
+        {"name": "Adapter Abstraction", "weight": 0.18, "checks": ["Provider contract clean", "Fake provider support"]},
+        {"name": "Degradation Behavior", "weight": 0.17, "checks": ["Fallback paths deterministic", "Conversation continuity preserved"]},
+        {"name": "Tool Safety", "weight": 0.18, "checks": ["Dispatcher restrictions enforced", "Scoped tool access only"]},
+        {"name": "Latency and Cost Control", "weight": 0.16, "checks": ["Routing policy applied", "Budget limits honored"]},
+        {"name": "Streaming Correctness", "weight": 0.15, "checks": ["SSE/WebSocket stability", "Cancellation propagation"]},
+        {"name": "Traceability", "weight": 0.16, "checks": ["Prompt/version tracked", "Usage metrics complete"]}
+      ]
+    },
+    "M5": {
+      "goal": "Integration registry and resilient event spine.",
+      "pass_score": 82,
+      "pillars": [
+        {"name": "Connector Modularity", "weight": 0.17, "checks": ["Manifest-based registration", "New connector minimal changes"]},
+        {"name": "Data Integrity", "weight": 0.18, "checks": ["Deduplication rules", "Provenance normalization"]},
+        {"name": "Sync Resilience", "weight": 0.18, "checks": ["Cursor resumes", "Retry/backoff semantics"]},
+        {"name": "Consent Enforcement", "weight": 0.18, "checks": ["Pre-registration guard", "Per-invocation consent check"]},
+        {"name": "Operational Visibility", "weight": 0.14, "checks": ["Connection health states", "Actionable failure surfaces"]},
+        {"name": "SDK Quality", "weight": 0.15, "checks": ["Connector test contract", "Integration docs complete"]}
+      ]
+    },
+    "M6": {
+      "goal": "Memory candidate, recall, and consolidation.",
+      "pass_score": 84,
+      "pillars": [
+        {"name": "Memory Safety", "weight": 0.2, "checks": ["No direct durable writes", "Sensitive memory approval required"]},
+        {"name": "Precision", "weight": 0.18, "checks": ["Worthiness thresholds tuned", "Low-noise extraction"]},
+        {"name": "User Agency", "weight": 0.18, "checks": ["Explain/correct/reject flow", "Delete/export supported"]},
+        {"name": "Consistency", "weight": 0.15, "checks": ["Contradiction detection", "Suspended state behavior"]},
+        {"name": "Retrieval Quality", "weight": 0.15, "checks": ["Recall relevance", "Metadata filtering"]},
+        {"name": "Lifecycle Governance", "weight": 0.14, "checks": ["Decay/archive/prune jobs", "Access reinforcement logic"]}
+      ]
+    },
+    "M7": {
+      "goal": "Suggestions, briefs, and automations.",
+      "pass_score": 80,
+      "pillars": [
+        {"name": "User Value", "weight": 0.18, "checks": ["Brief usefulness", "Context capsule relevance"]},
+        {"name": "Automation Correctness", "weight": 0.18, "checks": ["No duplicate runs", "Schedule interpretation accuracy"]},
+        {"name": "Interruption Discipline", "weight": 0.17, "checks": ["Budget policy honored", "Quiet mode respected"]},
+        {"name": "Explainability", "weight": 0.16, "checks": ["Why-this-shown rationale", "Suppression path present"]},
+        {"name": "Control Surface", "weight": 0.16, "checks": ["Enable/disable/edit/run-now", "Failure visibility"]},
+        {"name": "Feedback Learning", "weight": 0.15, "checks": ["Dismiss/snooze feedback captured", "Feedback influences ranking"]}
+      ]
+    },
+    "M8": {
+      "goal": "Draft-first policy engine and safe actions.",
+      "pass_score": 84,
+      "pillars": [
+        {"name": "Policy Completeness", "weight": 0.2, "checks": ["Typed risk rules", "Unknown actions denied"]},
+        {"name": "Approval Integrity", "weight": 0.18, "checks": ["Draft lifecycle enforced", "No bypass route"]},
+        {"name": "Scope Containment", "weight": 0.17, "checks": ["Per-run scoped capability token", "No tool-scope expansion"]},
+        {"name": "Execution Safety", "weight": 0.16, "checks": ["Timeout/cancel/heartbeat", "Expected-state verification"]},
+        {"name": "Audit Evidence", "weight": 0.15, "checks": ["Redacted action timeline", "Verification evidence retained"]},
+        {"name": "Adversarial Robustness", "weight": 0.14, "checks": ["Prompt abuse tests", "Policy simulation coverage"]}
+      ]
+    },
+    "M9": {
+      "goal": "Trusted Windows automation for Join Prepared.",
+      "pass_score": 84,
+      "pillars": [
+        {"name": "Deterministic Targeting", "weight": 0.2, "checks": ["Semantic element selection", "Ambiguity abort behavior"]},
+        {"name": "Safety Preconditions", "weight": 0.18, "checks": ["Meeting URL verification", "App identity validation"]},
+        {"name": "Fail-Closed Behavior", "weight": 0.18, "checks": ["No unsafe fallback clicks", "Unexpected state aborts"]},
+        {"name": "Evidence Quality", "weight": 0.15, "checks": ["Redacted replay logs", "Action previews available"]},
+        {"name": "Compatibility Coverage", "weight": 0.14, "checks": ["Zoom/Meet/Teams workflows", "Version matrix clarity"]},
+        {"name": "User Override", "weight": 0.15, "checks": ["Preview-and-cancel path", "Experimental mode isolated"]}
+      ]
+    },
+    "M10": {
+      "goal": "Realtime voice and CSM presence.",
+      "pass_score": 80,
+      "pillars": [
+        {"name": "Voice State Correctness", "weight": 0.17, "checks": ["Session state machine integrity", "Barge-in behavior works"]},
+        {"name": "Latency Budget", "weight": 0.18, "checks": ["P95 measured per stage", "Graceful degradation"]},
+        {"name": "Privacy", "weight": 0.18, "checks": ["Push-to-talk default", "Transcript retention controls"]},
+        {"name": "Adapter Reliability", "weight": 0.16, "checks": ["TTS/STT health reporting", "Failure fallback to text"]},
+        {"name": "Multimodal Cohesion", "weight": 0.15, "checks": ["3D core reflects voice state", "Amplitude-driven UI coherent"]},
+        {"name": "Device Experience", "weight": 0.16, "checks": ["Input/output selection", "Diagnostics clarity"]}
+      ]
+    },
+    "M11": {
+      "goal": "Operationally valuable spatial command center.",
+      "pass_score": 80,
+      "pillars": [
+        {"name": "State Fidelity", "weight": 0.18, "checks": ["Scene state mirrors backend", "Event stream bindings stable"]},
+        {"name": "Information Density", "weight": 0.17, "checks": ["Status encoding legible", "Low clutter under load"]},
+        {"name": "Navigation Utility", "weight": 0.17, "checks": ["Focus transitions useful", "Timeline/bookmark affordances"]},
+        {"name": "Accessibility Equivalence", "weight": 0.18, "checks": ["2D mirror parity", "Reduced-motion and no-WebGL parity"]},
+        {"name": "Performance Stability", "weight": 0.15, "checks": ["Frame pacing stable", "Low-power behavior predictable"]},
+        {"name": "User Comprehension", "weight": 0.15, "checks": ["Users complete key tasks faster", "Scene improves understanding"]}
+      ]
+    },
+    "M12": {
+      "goal": "Reliability, security, packaging, and beta readiness.",
+      "pass_score": 85,
+      "pillars": [
+        {"name": "Security Assurance", "weight": 0.2, "checks": ["Threat model complete", "Dependency and secret scans green"]},
+        {"name": "Privacy Guarantees", "weight": 0.18, "checks": ["Redaction tests pass", "Delete/export guarantees verified"]},
+        {"name": "Operational Reliability", "weight": 0.17, "checks": ["Soak/perf tests pass", "Recovery flows validated"]},
+        {"name": "Installability", "weight": 0.15, "checks": ["Installer and signing working", "First-run wizard stable"]},
+        {"name": "Supportability", "weight": 0.15, "checks": ["Diagnostics bundle usable", "Troubleshooting matrix complete"]},
+        {"name": "Beta Readiness", "weight": 0.15, "checks": ["Readiness review evidence", "Acceptance gates passed"]}
+      ]
+    },
+    "M13": {
+      "goal": "Post-MVP expansion with trust invariants preserved.",
+      "pass_score": 82,
+      "pillars": [
+        {"name": "Trust Invariant Preservation", "weight": 0.2, "checks": ["Consent/action/memory rules unchanged", "New features cannot bypass policy"]},
+        {"name": "Platform Scalability", "weight": 0.17, "checks": ["Hosted sync architecture sound", "Multi-device conflict strategy"]},
+        {"name": "Commercial Coherence", "weight": 0.16, "checks": ["Capability-based pricing rationale", "No artificial restrictions"]},
+        {"name": "Ecosystem Safety", "weight": 0.16, "checks": ["Skill signing/verification", "Marketplace abuse controls"]},
+        {"name": "Cross-Surface Consistency", "weight": 0.15, "checks": ["Mobile and desktop behavior alignment", "Remote approval UX integrity"]},
+        {"name": "Learning Loop Quality", "weight": 0.16, "checks": ["Privacy-safe analytics", "Experiments gated by safety"]}
+      ]
+    }
+  }
+}

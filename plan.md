@@ -1,4 +1,7 @@
-## Plan: Lockd'In End-to-End Implementation + MVP Handoff
+> [!IMPORTANT]
+> This document is the original MVP handoff and is retained for history. The canonical product and implementation roadmap is now [docs/MASTER_PLAN.md](docs/MASTER_PLAN.md).
+
+## Historical Plan: Lockd'In End-to-End Implementation + MVP Handoff
 
 Lockd'In is a proactive personal software partner that helps users execute life and work reliably, not just chat. It should remind, nudge, prioritize, and safely automate recurring desktop workflows while preserving trust through strong consent, memory auditing, and action safety controls.
 
