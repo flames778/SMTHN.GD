@@ -7,8 +7,10 @@ on:
     branches: [ main ]
 
 jobs:
-  test:
+  quality:
     runs-on: ubuntu-latest
+    env:
+      MIN_COVERAGE: "35"
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
@@ -17,21 +19,42 @@ jobs:
           fetch-depth: 0
 
       - name: Setup Python 3.11
-        uses: actions/setup-python@v4
+        uses: actions/setup-python@v5
         with:
           python-version: '3.11'
 
-      - name: Install minimal deps
+      - name: Install Python dependencies
         run: |
           python -m pip install --upgrade pip
-          # avoid installing large compiled deps (torch) in CI here
-          pip install --no-deps -r requirements.txt || true
-          pip install pytest
+          pip install -e .[dev]
+          pip install -r lockdin_mvp/requirements.txt
+          pip install pytest-cov
 
-      - name: Run Jarvis dry-run smoke test
+      - name: Lint
         run: |
-          python -c "from jarvis import Jarvis; j=Jarvis('./DeepSeek-V4-Pro','./DeepSeek-V4-Pro/inference/config.json', device='cpu', dry_run=True); print('smoke:', j.think('hello'))"
+          ruff format --check scripts lockdin_mvp/app lockdin_mvp/tests
+          ruff check scripts lockdin_mvp/app lockdin_mvp/tests
 
-      - name: Run fetch_assets script (no-op without URLs)
+      - name: Type check
         run: |
-          bash scripts/fetch_assets.sh assets || true
+          mypy --strict scripts/dev_doctor.py scripts/critique_milestone.py
+
+      - name: Unit tests with coverage threshold
+        run: |
+          pytest lockdin_mvp/tests --maxfail=1 --cov=lockdin_mvp/app --cov-report=term-missing --cov-fail-under=${MIN_COVERAGE}
+
+      - name: Development doctor (warn-safe in CI)
+        run: |
+          python scripts/dev_doctor.py --allow-warn
+
+  secret-scan:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Run gitleaks
+        uses: gitleaks/gitleaks-action@v2
+        with:
+          args: git --redact --verbose
