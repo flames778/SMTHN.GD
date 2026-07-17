@@ -1,0 +1,8 @@
+{
+  "Identity Integrity": 5,
+  "Data Security": 1,
+  "API Reliability": 2,
+  "Schema Correctness": 1,
+  "Observability": 0,
+  "Test Depth": 2
+}

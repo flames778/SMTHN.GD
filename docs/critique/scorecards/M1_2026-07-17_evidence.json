@@ -1,0 +1,8 @@
+{
+  "Identity Integrity": "ActorContext is required by protected routes; no hardcoded user identity remains in application code; Celery sync receives user_id at dispatch.",
+  "Data Security": "Identity propagation exists, but authenticated sessions and token encryption are not implemented.",
+  "API Reliability": "Missing actor context uses a problem-details payload; remaining API errors and idempotency are pending.",
+  "Schema Correctness": "Consent domain contract exists; M1 identity tables and event constraints are pending.",
+  "Observability": "Structured correlation logging is not implemented.",
+  "Test Depth": "Unit and route regression tests pass; PostgreSQL integration fixtures are pending."
+}
