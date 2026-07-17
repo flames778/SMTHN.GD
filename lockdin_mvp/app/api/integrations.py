@@ -14,6 +14,7 @@ from app.schemas.integration import (
     IntegrationConnectRequest,
     IntegrationRead,
 )
+from app.schemas.problem_details import problem_details
 from app.services.oauth_google import GoogleOAuthService
 from app.workers.tasks import sync_google_integrations
 
@@ -43,12 +44,24 @@ def google_callback(
 ) -> IntegrationRead:
     oauth = GoogleOAuthService()
     if not oauth.verify_state(state=state, user_id=actor.user_id):
-        raise HTTPException(status_code=400, detail="Invalid or expired OAuth state")
+        raise HTTPException(
+            status_code=400,
+            detail=problem_details(
+                error_code="OAUTH_STATE_INVALID",
+                detail="OAuth state token expired or was tampered with",
+            ).to_dict(),
+        )
 
     try:
         token = oauth.exchange_code(code, redirect_uri)
     except ValueError as exc:
-        raise HTTPException(status_code=400, detail=str(exc)) from exc
+        raise HTTPException(
+            status_code=400,
+            detail=problem_details(
+                error_code="OAUTH_CODE_EXCHANGE_FAILED",
+                detail=str(exc),
+            ).to_dict(),
+        ) from exc
 
     row = IntegrationRepository(db).upsert_google(
         user_id=actor.user_id,
@@ -71,7 +84,13 @@ def connect_google(
     try:
         token = oauth.exchange_code(request.auth_code, request.redirect_uri)
     except ValueError as exc:
-        raise HTTPException(status_code=400, detail=str(exc)) from exc
+        raise HTTPException(
+            status_code=400,
+            detail=problem_details(
+                error_code="OAUTH_CODE_EXCHANGE_FAILED",
+                detail=str(exc),
+            ).to_dict(),
+        ) from exc
 
     row = IntegrationRepository(db).upsert_google(
         user_id=actor.user_id,
@@ -89,20 +108,44 @@ def refresh_integration(provider: str, actor: ActorDependency, db: DbSession) ->
     repo = IntegrationRepository(db)
     row = repo.get_by_provider(user_id=actor.user_id, provider=provider)
     if not row:
-        raise HTTPException(status_code=404, detail=f"Integration {provider} not found")
+        raise HTTPException(
+            status_code=404,
+            detail=problem_details(
+                error_code="INTEGRATION_NOT_FOUND",
+                detail=f"Integration {provider} not found",
+            ).to_dict(),
+        )
 
     if provider != "google":
-        raise HTTPException(status_code=400, detail="Only google refresh is supported in MVP")
+        raise HTTPException(
+            status_code=400,
+            detail=problem_details(
+                error_code="UNSUPPORTED_INTEGRATION",
+                detail="Only google refresh is supported in MVP",
+            ).to_dict(),
+        )
 
     tokens = repo.get_decrypted_tokens(row)
     if not tokens["refresh_token"]:
-        raise HTTPException(status_code=400, detail="Refresh token not available")
+        raise HTTPException(
+            status_code=400,
+            detail=problem_details(
+                error_code="REFRESH_TOKEN_NOT_AVAILABLE",
+                detail="Refresh token not available",
+            ).to_dict(),
+        )
 
     oauth = GoogleOAuthService()
     try:
         refreshed = oauth.refresh_token(tokens["refresh_token"])
     except ValueError as exc:
-        raise HTTPException(status_code=400, detail=str(exc)) from exc
+        raise HTTPException(
+            status_code=400,
+            detail=problem_details(
+                error_code="OAUTH_TOKEN_REFRESH_FAILED",
+                detail=str(exc),
+            ).to_dict(),
+        ) from exc
 
     updated = repo.update_tokens(
         row=row,
@@ -118,7 +161,13 @@ def revoke_integration(provider: str, actor: ActorDependency, db: DbSession) -> 
     repo = IntegrationRepository(db)
     row = repo.get_by_provider(user_id=actor.user_id, provider=provider)
     if not row:
-        raise HTTPException(status_code=404, detail=f"Integration {provider} not found")
+        raise HTTPException(
+            status_code=404,
+            detail=problem_details(
+                error_code="INTEGRATION_NOT_FOUND",
+                detail=f"Integration {provider} not found",
+            ).to_dict(),
+        )
 
     revoked = repo.revoke(row)
     return IntegrationRead.model_validate(revoked)

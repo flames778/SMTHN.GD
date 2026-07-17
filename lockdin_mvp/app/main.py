@@ -6,6 +6,7 @@ from lockdin_backend.api.session_routes import router as session_router
 
 from app.api.consent import router as consent_router
 from app.api.integrations import router as integrations_router
+from app.api.problem_details_handlers import register_problem_details_handlers
 from app.core.config import get_settings
 
 
@@ -17,6 +18,10 @@ async def lifespan(_app: FastAPI) -> AsyncIterator[None]:
 
 
 app = FastAPI(title="Lockd'In MVP API", version="0.1.0", lifespan=lifespan)
+
+# Register RFC 9457 Problem Details exception handlers
+register_problem_details_handlers(app)
+
 app.include_router(integrations_router)
 app.include_router(consent_router)
 app.include_router(session_router)

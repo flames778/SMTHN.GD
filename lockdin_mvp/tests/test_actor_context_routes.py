@@ -21,7 +21,9 @@ def test_protected_routes_reject_missing_actor_context(path: str) -> None:
     response = client.get(path)
 
     assert response.status_code == 401
-    assert response.json()["detail"]["type"].endswith("actor-context-required")
+    data = response.json()
+    assert data["error_code"] == "UNAUTHORIZED"
+    assert "unauthorized" in data["type"]
 
 
 def test_issued_session_authenticates_protected_consent_route() -> None:

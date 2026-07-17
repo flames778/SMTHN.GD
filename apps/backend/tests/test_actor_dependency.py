@@ -1,9 +1,12 @@
 from collections.abc import Generator
 
 import pytest
-from fastapi import FastAPI
+from fastapi import FastAPI, HTTPException, status
 from fastapi.testclient import TestClient
+from starlette.requests import Request
+from starlette.responses import JSONResponse
 from lockdin_backend.api.dependencies import ActorDependency
+from lockdin_backend.domain.problem_details import ProblemDetails
 from lockdin_backend.persistence.base import Base
 from lockdin_backend.persistence.database import get_identity_db
 from lockdin_backend.persistence.identity import IdentityRepository
@@ -12,6 +15,47 @@ from sqlalchemy.orm import Session
 from sqlalchemy.pool import StaticPool
 
 app = FastAPI()
+
+
+# Add problem details exception handler
+async def http_exception_handler(request: Request, exc: HTTPException) -> JSONResponse:
+    """Convert HTTPException to RFC 9457 Problem Details."""
+    if isinstance(exc.detail, dict) and "error_code" in exc.detail:
+        return JSONResponse(
+            status_code=exc.status_code,
+            content=exc.detail,
+        )
+    
+    # Map status codes to error codes
+    status_to_error_code = {
+        status.HTTP_400_BAD_REQUEST: ("BAD_REQUEST", "Bad Request"),
+        status.HTTP_401_UNAUTHORIZED: ("UNAUTHORIZED", "Unauthorized"),
+        status.HTTP_403_FORBIDDEN: ("FORBIDDEN", "Forbidden"),
+        status.HTTP_404_NOT_FOUND: ("NOT_FOUND", "Not Found"),
+        status.HTTP_409_CONFLICT: ("CONFLICT", "Conflict"),
+        status.HTTP_500_INTERNAL_SERVER_ERROR: ("INTERNAL_SERVER_ERROR", "Internal Server Error"),
+        status.HTTP_503_SERVICE_UNAVAILABLE: ("SERVICE_UNAVAILABLE", "Service Unavailable"),
+    }
+    
+    error_code, title = status_to_error_code.get(
+        exc.status_code, ("UNKNOWN_ERROR", "Unknown Error")
+    )
+    
+    details = ProblemDetails(
+        type=f"https://api.lockdin.ai/errors/{error_code.lower().replace('_', '-')}",
+        status=exc.status_code,
+        title=title,
+        detail=str(exc.detail) if exc.detail else None,
+        error_code=error_code,
+    )
+    
+    return JSONResponse(
+        status_code=exc.status_code,
+        content=details.to_dict(),
+    )
+
+
+app.add_exception_handler(HTTPException, http_exception_handler)
 
 
 @app.get("/actor")
@@ -56,7 +100,9 @@ def test_actor_dependency_rejects_missing_identity(
     response = client.get("/actor")
 
     assert response.status_code == 401
-    assert response.json()["detail"]["type"].endswith("actor-context-required")
+    data = response.json()
+    assert data["error_code"] == "UNAUTHORIZED"
+    assert "unauthorized" in data["type"]
 
 
 def test_actor_dependency_resolves_context_from_session(

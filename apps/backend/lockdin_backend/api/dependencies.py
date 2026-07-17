@@ -5,6 +5,7 @@ from typing import Annotated
 from fastapi import Depends, Header, HTTPException, status
 from sqlalchemy.orm import Session
 
+from lockdin_backend.domain.problem_details import ProblemDetails
 from lockdin_backend.identity import ActorContext
 from lockdin_backend.persistence.database import get_identity_db
 from lockdin_backend.persistence.identity import IdentityRepository
@@ -20,14 +21,17 @@ def get_actor_context(
     if actor is not None:
         return actor
 
+    details = ProblemDetails(
+        type="https://api.lockdin.ai/errors/unauthorized",
+        status=status.HTTP_401_UNAUTHORIZED,
+        title="Unauthorized",
+        detail="X-Lockdin-Session-Token is missing, invalid, expired, or revoked",
+        error_code="UNAUTHORIZED",
+    )
+
     raise HTTPException(
         status_code=status.HTTP_401_UNAUTHORIZED,
-        detail={
-            "type": "https://lockdin.local/problems/actor-context-required",
-            "title": "Authenticated session required",
-            "status": status.HTTP_401_UNAUTHORIZED,
-            "detail": "X-Lockdin-Session-Token is missing, invalid, expired, or revoked",
-        },
+        detail=details.to_dict(),
     )
 
 

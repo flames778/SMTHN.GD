@@ -9,6 +9,7 @@ from fastapi import APIRouter, Header, HTTPException, status
 from pydantic import BaseModel, Field
 
 from lockdin_backend.api.dependencies import IdentityDb
+from lockdin_backend.domain.problem_details import ProblemDetails
 from lockdin_backend.persistence.identity import (
     BootstrapAlreadyCompletedError,
     IdentityRepository,
@@ -31,6 +32,19 @@ class BootstrapSessionResponse(BaseModel):
     expires_at: datetime
 
 
+def _problem_details(
+    error_code: str, status_code: int, title: str, detail: str | None = None
+) -> dict:
+    """Construct a ProblemDetails response."""
+    return ProblemDetails(
+        type=f"https://api.lockdin.ai/errors/{error_code.lower()}",
+        status=status_code,
+        title=title,
+        detail=detail,
+        error_code=error_code,
+    ).to_dict()
+
+
 @router.post(
     "/bootstrap", response_model=BootstrapSessionResponse, status_code=status.HTTP_201_CREATED
 )
@@ -43,12 +57,22 @@ def bootstrap_session(
     if not expected_token or len(expected_token) < 32:
         raise HTTPException(
             status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
-            detail="Session bootstrap is not configured",
+            detail=_problem_details(
+                "BOOTSTRAP_FAILED",
+                status.HTTP_503_SERVICE_UNAVAILABLE,
+                "Bootstrap Failed",
+                "Session bootstrap is not configured",
+            ),
         )
     if bootstrap_token is None or not secrets.compare_digest(bootstrap_token, expected_token):
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
-            detail="Invalid bootstrap token",
+            detail=_problem_details(
+                "INVALID_SETUP_SECRET",
+                status.HTTP_403_FORBIDDEN,
+                "Invalid Setup Secret",
+                "Invalid bootstrap token",
+            ),
         )
 
     try:
@@ -60,7 +84,12 @@ def bootstrap_session(
     except BootstrapAlreadyCompletedError as exc:
         raise HTTPException(
             status_code=status.HTTP_409_CONFLICT,
-            detail=str(exc),
+            detail=_problem_details(
+                "OWNER_ALREADY_INITIALIZED",
+                status.HTTP_409_CONFLICT,
+                "Owner Already Initialized",
+                str(exc),
+            ),
         ) from exc
 
     return BootstrapSessionResponse(

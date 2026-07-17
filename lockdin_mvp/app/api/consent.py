@@ -7,6 +7,7 @@ from sqlalchemy.orm import Session
 from app.db.session import get_db
 from app.repositories.consent import ConsentRepository
 from app.schemas.consent import ConsentRead, ConsentUpsertRequest
+from app.schemas.problem_details import problem_details
 
 router = APIRouter(prefix="/api/consent", tags=["consent"])
 DbSession = Annotated[Session, Depends(get_db)]
@@ -34,6 +35,12 @@ def list_consents(actor: ActorDependency, db: DbSession) -> list[ConsentRead]:
 def delete_consent(consent_id: str, actor: ActorDependency, db: DbSession) -> dict[str, str]:
     deleted = ConsentRepository(db).delete(user_id=actor.user_id, consent_id=consent_id)
     if not deleted:
-        raise HTTPException(status_code=404, detail="Consent record not found")
+        raise HTTPException(
+            status_code=404,
+            detail=problem_details(
+                error_code="CONSENT_RECORD_NOT_FOUND",
+                detail="Consent record not found",
+            ).to_dict(),
+        )
 
     return {"status": "deleted", "id": consent_id}
