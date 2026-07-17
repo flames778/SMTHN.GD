@@ -10,7 +10,11 @@ jobs:
   quality:
     runs-on: ubuntu-latest
     env:
-      MIN_COVERAGE: "35"
+      MIN_COVERAGE: "45"
+      PYTHONPATH: "lockdin_mvp"
+      DATABASE_URL: "postgresql+psycopg://lockdin:lockdin@localhost:5432/lockdin_test"
+      REDIS_URL: "redis://localhost:6379/15"
+      APP_ENCRYPTION_KEY: "ci-only-encryption-key-32-characters"
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
@@ -32,16 +36,17 @@ jobs:
 
       - name: Lint
         run: |
-          ruff format --check scripts lockdin_mvp/app lockdin_mvp/tests
-          ruff check scripts lockdin_mvp/app lockdin_mvp/tests
+          ruff format --check apps/backend scripts/dev_doctor.py scripts/critique_milestone.py
+          ruff check apps/backend scripts/dev_doctor.py scripts/critique_milestone.py
 
       - name: Type check
         run: |
           mypy --strict scripts/dev_doctor.py scripts/critique_milestone.py
+          mypy --strict apps/backend/lockdin_backend
 
       - name: Unit tests with coverage threshold
         run: |
-          pytest lockdin_mvp/tests --maxfail=1 --cov=lockdin_mvp/app --cov-report=term-missing --cov-fail-under=${MIN_COVERAGE}
+          pytest apps/backend/tests lockdin_mvp/tests --maxfail=1 --cov=lockdin_backend --cov=lockdin_mvp/app --cov-report=term-missing --cov-fail-under=${MIN_COVERAGE}
 
       - name: Development doctor (warn-safe in CI)
         run: |

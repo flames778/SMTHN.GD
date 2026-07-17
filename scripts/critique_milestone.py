@@ -3,16 +3,21 @@ from __future__ import annotations
 import argparse
 import json
 from pathlib import Path
+from typing import Any, cast
 
 ROOT = Path(__file__).resolve().parents[1]
 PILLARS_PATH = ROOT / "docs" / "critique" / "milestone_pillars.json"
 
 
-def load_pillars() -> dict:
-    return json.loads(PILLARS_PATH.read_text(encoding="utf-8"))
+def load_pillars() -> dict[str, Any]:
+    return cast(dict[str, Any], json.loads(PILLARS_PATH.read_text(encoding="utf-8")))
 
 
-def score_milestone(milestone: str, scores: dict[str, int], evidence: dict[str, str]) -> dict:
+def score_milestone(
+    milestone: str,
+    scores: dict[str, int],
+    evidence: dict[str, str],
+) -> dict[str, Any]:
     pillars_data = load_pillars()
     if milestone not in pillars_data["milestones"]:
         raise ValueError(f"unknown milestone: {milestone}")
@@ -56,7 +61,9 @@ def score_milestone(milestone: str, scores: dict[str, int], evidence: dict[str, 
 
 
 def build_parser() -> argparse.ArgumentParser:
-    parser = argparse.ArgumentParser(description="Score a milestone implementation against custom SWE pillars.")
+    parser = argparse.ArgumentParser(
+        description="Score a milestone implementation against custom SWE pillars."
+    )
     parser.add_argument("--milestone", required=True, help="Milestone id, e.g. M0")
     parser.add_argument(
         "--scores-json",
