@@ -18,13 +18,13 @@ jobs:
       APP_BOOTSTRAP_TOKEN: "ci-only-bootstrap-token-32-characters"
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
         with:
-          submodules: 'recursive'
+          submodules: false
           fetch-depth: 0
 
       - name: Setup Python 3.11
-        uses: actions/setup-python@v5
+        uses: actions/setup-python@v6
         with:
           python-version: '3.11'
 
@@ -57,7 +57,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
         with:
           fetch-depth: 0
       - name: Run gitleaks
