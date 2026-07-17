@@ -2,6 +2,46 @@
 
 All notable changes to this project are documented in this file.
 
+## Unreleased - M1 Request Boundary Protections
+
+### Added
+- RateLimitMiddleware for sliding window rate limiting.
+  - Limits: 1000 requests per 60 seconds per IP (MVP) or user (backend).
+  - Returns 429 (Too Many Requests) with Retry-After header.
+  - Separate limits for each identifier (sliding window algorithm).
+- RequestSizeLimitMiddleware for maximum request body size validation.
+  - Default: 10 MB; configurable per deployment.
+  - Returns 413 (Payload Too Large) for oversized requests.
+  - Prevents memory exhaustion and DOS attacks.
+- TrustedHostMiddleware for optional host validation.
+  - Validates Host header against trusted hosts whitelist.
+  - Disabled by default; configurable per environment.
+  - Returns 403 (Forbidden) for untrusted hosts.
+- CORS configuration with environment-aware allow lists.
+  - Development: localhost:3000, 5173, 8000, 8001.
+  - Staging: app-staging.lockdin.ai.
+  - Production: app.lockdin.ai only.
+  - Custom headers: X-Correlation-ID, X-Lockdin-Session-Token.
+  - Max-Age: 86400 (24h) for prod/staging, 3600 (1h) for dev.
+- Comprehensive test suite (31 tests, all passing).
+  - MVP tests: 19 tests covering rate limiting, request size, CORS.
+  - Backend tests: 12 tests covering security middleware.
+
+### Changed
+- MVP app registers CORS, rate limiting, and request size limit middleware.
+- Middleware registration order optimized for FastAPI.
+  - CORS (first, handles preflight).
+  - RequestSizeLimit (validates size).
+  - RateLimit (rate limit check).
+  - CorrelationId (tracing).
+
+### Security
+- Rate limiting prevents brute force attacks and DOS.
+- Request size limits prevent memory exhaustion.
+- CORS prevents cross-origin credential theft.
+- Proper Retry-After headers guide client backoff.
+- Environment-specific configurations support production hardening.
+
 ## Unreleased - M1 PostgreSQL Integration Fixtures
 
 ### Added

@@ -232,7 +232,9 @@ Test Infrastructure Readiness:
 - Future slices can reuse `issued_owner` and `auth_headers` fixtures without duplication.
 - Factories support flexible test data creation for new domain entities.
 
-## Remaining M1 Work
+## Slice 6: PostgreSQL Integration Fixtures
+
+Completed:
 
 - [x] M1-T02 Add users, devices, sessions, and conversations persistence.
 - [x] M1-T03 Encrypt integration credentials at rest.
@@ -240,7 +242,7 @@ Test Infrastructure Readiness:
 - [ ] M1-T05 Migrate remaining core operations into use cases and explicit transactions.
 - [x] M1-T06 Apply RFC 9457 problem details to all API failures.
 - [x] M1-T07 Add structured correlation logging.
-- [ ] M1-T08 Add request boundary protections.
+- [x] M1-T08 Add request boundary protections.
 - [x] M1-T09 Replace deprecated startup events with lifespan management.
 - [ ] M1-T10 Add mutation and job idempotency.
 - [ ] M1-T11 Add health, readiness, dependency, and version endpoints.
