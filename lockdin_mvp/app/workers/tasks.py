@@ -6,8 +6,6 @@ from app.services.integration_sync_service import IntegrationSyncService
 from app.services.reminder_service import ReminderService
 from app.workers.celery_app import celery_app
 
-MVP_USER_ID = "local-user"
-
 
 @celery_app.task(name="reminders.generate")
 def generate_reminders() -> dict[str, int]:
@@ -21,12 +19,12 @@ def generate_reminders() -> dict[str, int]:
 
 
 @celery_app.task(name="integrations.sync_google")
-def sync_google_integrations() -> dict[str, int | str]:
+def sync_google_integrations(user_id: str) -> dict[str, int | str]:
     db = SessionLocal()
     try:
         integration_repo = IntegrationRepository(db)
         consent_repo = ConsentRepository(db)
-        integration = integration_repo.get_by_provider(user_id=MVP_USER_ID, provider="google")
+        integration = integration_repo.get_by_provider(user_id=user_id, provider="google")
         if not integration or integration.status != "connected" or not integration.access_token:
             return {"status": "skipped", "reason": "google integration not connected", "calendar": 0, "gmail": 0}
 
@@ -35,7 +33,7 @@ def sync_google_integrations() -> dict[str, int | str]:
         gmail_count = 0
 
         if consent_repo.is_granted(
-            user_id=MVP_USER_ID,
+            user_id=user_id,
             integration="google",
             data_category="calendar",
             purpose="sync",
@@ -43,7 +41,7 @@ def sync_google_integrations() -> dict[str, int | str]:
             calendar_count = sync_service.sync_google_calendar(integration.access_token)
 
         if consent_repo.is_granted(
-            user_id=MVP_USER_ID,
+            user_id=user_id,
             integration="google",
             data_category="gmail",
             purpose="sync",

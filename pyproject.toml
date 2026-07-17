@@ -46,6 +46,10 @@ jarvis = [
   "openai-whisper"
 ]
 
+[tool.setuptools.packages.find]
+where = ["apps/backend"]
+include = ["lockdin_backend*"]
+
 [tool.ruff]
 line-length = 100
 target-version = "py311"
@@ -54,7 +58,7 @@ target-version = "py311"
 select = ["E", "F", "I", "UP", "B"]
 
 [tool.pytest.ini_options]
-testpaths = ["lockdin_mvp/tests"]
+testpaths = ["apps/backend/tests", "lockdin_mvp/tests"]
 
 [tool.mypy]
 python_version = "3.11"
