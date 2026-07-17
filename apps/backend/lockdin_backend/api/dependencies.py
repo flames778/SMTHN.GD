@@ -5,6 +5,7 @@ from typing import Annotated
 from fastapi import Depends, Header, HTTPException, status
 from sqlalchemy.orm import Session
 
+from lockdin_backend.core.logging import get_correlation_id
 from lockdin_backend.domain.problem_details import ProblemDetails
 from lockdin_backend.identity import ActorContext
 from lockdin_backend.persistence.database import get_identity_db
@@ -27,6 +28,7 @@ def get_actor_context(
         title="Unauthorized",
         detail="X-Lockdin-Session-Token is missing, invalid, expired, or revoked",
         error_code="UNAUTHORIZED",
+        correlation_id=get_correlation_id(),
     )
 
     raise HTTPException(

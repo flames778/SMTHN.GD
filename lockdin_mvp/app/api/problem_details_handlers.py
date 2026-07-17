@@ -7,6 +7,7 @@ from starlette.responses import JSONResponse
 from starlette.status import HTTP_500_INTERNAL_SERVER_ERROR
 from fastapi import FastAPI, HTTPException, status
 
+from app.core.logging import get_correlation_id
 from app.schemas.problem_details import ProblemDetails, problem_details
 
 
@@ -22,6 +23,10 @@ async def problem_details_exception_handler(
     request: Request, exc: ProblemDetailsException
 ) -> JSONResponse:
     """Handle ProblemDetailsException and return RFC 9457 response."""
+    # Inject correlation_id if not already set
+    if not exc.details.correlation_id:
+        exc.details.correlation_id = get_correlation_id()
+    
     return JSONResponse(
         status_code=exc.details.status,
         content=exc.details.to_dict(),
@@ -36,7 +41,9 @@ async def http_exception_handler(request: Request, exc: HTTPException) -> JSONRe
     """
     # Check if detail is already a ProblemDetails dict
     if isinstance(exc.detail, dict) and "error_code" in exc.detail:
-        # Already formatted; just return it
+        # Already formatted; inject correlation_id if missing
+        if not exc.detail.get("correlation_id"):
+            exc.detail["correlation_id"] = get_correlation_id()
         return JSONResponse(
             status_code=exc.status_code,
             content=exc.detail,
@@ -63,6 +70,7 @@ async def http_exception_handler(request: Request, exc: HTTPException) -> JSONRe
         title=title,
         detail=str(exc.detail) if exc.detail else None,
         error_code=error_code,
+        correlation_id=get_correlation_id(),
     )
 
     return JSONResponse(
@@ -77,6 +85,7 @@ async def generic_exception_handler(request: Request, exc: Exception) -> JSONRes
         error_code="INTERNAL_SERVER_ERROR",
         status=HTTP_500_INTERNAL_SERVER_ERROR,
         detail="An unexpected error occurred. Please try again later.",
+        correlation_id=get_correlation_id(),
     )
 
     return JSONResponse(
