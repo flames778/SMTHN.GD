@@ -1,0 +1,63 @@
+[build-system]
+requires = ["setuptools>=68", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "lockdin"
+version = "0.1.0"
+description = "SMTHN.GD Lockd'In workspace baseline"
+requires-python = ">=3.11,<3.13"
+dependencies = [
+  "fastapi==0.115.4",
+  "uvicorn[standard]==0.32.0",
+  "pydantic==2.9.2",
+  "pydantic-settings==2.5.2",
+  "sqlalchemy==2.0.36",
+  "psycopg[binary]==3.2.3",
+  "alembic==1.13.3",
+  "celery==5.4.0",
+  "redis==5.1.1",
+  "python-dotenv==1.0.1",
+  "httpx==0.27.2",
+  "pytest==8.3.3"
+]
+
+[project.optional-dependencies]
+dev = [
+  "ruff==0.12.4",
+  "mypy==1.16.1",
+  "pre-commit==4.2.0",
+  "pytest-cov==7.1.0"
+]
+jarvis = [
+  "torch>=2.2.0",
+  "torchaudio",
+  "transformers>=4.45.0",
+  "safetensors",
+  "huggingface_hub",
+  "fast_hadamard_transform",
+  "tilelang==0.1.8",
+  "numpy",
+  "scipy",
+  "soundfile",
+  "pydub",
+  "silentcipher @ git+https://github.com/SesameAILabs/silentcipher@master",
+  "sounddevice",
+  "openai-whisper"
+]
+
+[tool.ruff]
+line-length = 100
+target-version = "py311"
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "UP", "B"]
+
+[tool.pytest.ini_options]
+testpaths = ["lockdin_mvp/tests"]
+
+[tool.mypy]
+python_version = "3.11"
+warn_return_any = true
+warn_unused_configs = true
+disallow_untyped_defs = true

@@ -1,0 +1,14 @@
+{
+  "name": "lockdin-workspace",
+  "private": true,
+  "version": "0.1.0",
+  "description": "SMTHN.GD Lockd'In monorepo workspace",
+  "workspaces": [
+    "apps/*",
+    "packages/*"
+  ],
+  "scripts": {
+    "doctor": "python scripts/dev_doctor.py",
+    "critique": "python scripts/critique_milestone.py"
+  }
+}

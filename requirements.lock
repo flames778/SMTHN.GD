@@ -1,0 +1,7 @@
+# Root lockfile for workspace automation and CI tools (M0 baseline)
+
+ruff==0.12.4
+mypy==1.16.1
+pre-commit==4.2.0
+pytest==8.3.3
+pytest-cov==7.1.0

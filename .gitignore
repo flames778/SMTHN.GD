@@ -1,0 +1,48 @@
+# OS and editor artifacts
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
+
+# Python
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.coverage
+htmlcov/
+.venv/
+venv/
+
+# Environment and secrets
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+*.p12
+*.crt
+
+# Build and distribution
+build/
+dist/
+*.egg-info/
+
+# Node
+node_modules/
+.npm/
+.pnpm-store/
+.next/
+out/
+
+# Logs and temporary files
+*.log
+*.tmp
+*.swp
+
+# Runtime data
+*.sqlite
+*.db

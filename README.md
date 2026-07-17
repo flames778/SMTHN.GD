@@ -1,4 +1,28 @@
-Jarvis (DeepSeek + Sesame CSM) Integration
+SMTHN.GD Lockd'In Workspace
+
+M0 status: baseline hardening in progress.
+
+This repository currently contains both migration-source code and new canonical product paths.
+
+- Migration sources: `jarvis.py`, `lockdin_mvp/`, `DeepSeek-V4-Pro/`, `csm/`
+- Canonical destinations for new code: `apps/web/`, `apps/desktop/`, `packages/`, `docs/`
+
+M0 operational commands:
+
+```bash
+# Python and local service checks
+python scripts/dev_doctor.py
+
+# Soft mode for CI environments where local services are intentionally absent
+python scripts/dev_doctor.py --allow-warn
+
+# Milestone critique score (example)
+python scripts/critique_milestone.py --milestone M0 --scores-json '{"Repository Hygiene":4,"Secret Safety":5,"Developer Experience":4,"Build Reproducibility":4,"Architecture Governance":4,"Migration Clarity":4}'
+```
+
+See `docs/M0_EXECUTION.md` for ongoing M0 execution and `docs/critique/` for milestone critique skills.
+
+Legacy reference: Jarvis (DeepSeek + Sesame CSM) integration
 
 Overview
 - This repo integrates DeepSeek-V4-Pro (text generation) with Sesame CSM (voice generation) into a simple assistant called Jarvis.
