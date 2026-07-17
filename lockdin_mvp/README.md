@@ -26,19 +26,35 @@ This folder now also includes implementation slice 2 backend APIs:
 pip install -r requirements.txt
 ```
 
-3. Run API:
+3. Apply migrations:
+
+```bash
+alembic upgrade head
+```
+
+4. Run API:
 
 ```bash
 uvicorn app.main:app --reload
 ```
 
-4. Run worker:
+5. Bootstrap the first owner session once using the separate `APP_BOOTSTRAP_TOKEN` secret:
+
+```powershell
+$headers = @{ "X-Lockdin-Bootstrap-Token" = $env:APP_BOOTSTRAP_TOKEN }
+$body = @{ display_name = "Owner"; device_name = $env:COMPUTERNAME; platform = "windows" } | ConvertTo-Json
+Invoke-RestMethod -Method Post -Uri http://127.0.0.1:8000/api/session/bootstrap -Headers $headers -ContentType "application/json" -Body $body
+```
+
+The response contains `session_token` once. Send it to protected endpoints as `X-Lockdin-Session-Token`.
+
+6. Run worker:
 
 ```bash
 celery -A app.workers.celery_app.celery_app worker -l info
 ```
 
-5. Run tests:
+7. Run tests:
 
 ```bash
 pytest -q

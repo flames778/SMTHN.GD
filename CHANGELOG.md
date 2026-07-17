@@ -2,6 +2,49 @@
 
 All notable changes to this project are documented in this file.
 
+## Unreleased - M1 Identity Persistence
+
+### Added
+- Persistent users, devices, sessions, and conversations schema.
+- One-time owner bootstrap endpoint protected by a separate setup secret.
+- Opaque session tokens stored only as SHA-256 digests.
+- Session expiry, revocation, active-user, and ownership enforcement.
+- Alembic migration `0003_identity_and_conversations`.
+
+### Changed
+- Protected APIs now derive `ActorContext` from `X-Lockdin-Session-Token` instead of caller-supplied identity headers.
+- Initial-owner bootstrap is concurrency-safe through a database uniqueness constraint.
+
+## 2026-07-17 - M1 Identity Foundation
+
+### Added
+- Canonical backend package under `apps/backend/lockdin_backend`.
+- Immutable `ActorContext` carrying user, device, and session identity.
+- FastAPI actor dependency with problem-details-style unauthorized responses.
+- Consent application use case with explicit repository and unit-of-work ports.
+- Route and use-case tests for identity enforcement and consent ownership.
+- Model asset assessment for DeepSeek V4 Pro and Sesame CSM.
+- M1 execution log and six-pillar milestone critique evidence.
+
+### Changed
+- Protected consent and integration routes now require actor context instead of inventing a local user.
+- Google sync jobs now receive user identity explicitly across the Celery boundary.
+- FastAPI startup configuration now uses lifespan management.
+- CI now checks canonical backend formatting, linting, strict typing, tests, and a 45% coverage floor.
+- Developer diagnostics distinguish model source code from runnable checkpoints and voice assets.
+- Vendor model submodules no longer block product repository status checks.
+
+### Removed
+- Hardcoded `MVP_USER_ID` and `local-user` identity from product application code.
+- Tracked Python bytecode artifacts.
+
+### Commits
+- 1ea873f - feat(m1): propagate actor context across APIs and jobs
+- 83e0f48 - ci(m1): enforce canonical backend quality gates
+- 0b6c8c7 - chore(models): clarify optional provider asset readiness
+- f912d80 - docs(m1): record identity slice evidence and critique
+- 802ad10 - chore(repo): stop tracking generated Python bytecode
+
 ## 2026-07-17 - M0 Finalization
 
 ### Added

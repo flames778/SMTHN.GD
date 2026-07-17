@@ -16,6 +16,7 @@
 | LOCKDIN_API_HOST          | No      | Developer local | API bind host              | 127.0.0.1                                              |
 | LOCKDIN_API_PORT          | No      | Developer local | API bind port              | 8000                                                   |
 | LOCKDIN_WEB_ORIGIN        | No      | Developer local | Frontend origin            | http://localhost:3000                                  |
+| APP_BOOTSTRAP_TOKEN       | Yes     | Secret owner    | One-time owner setup secret | (set locally, at least 32 characters)                  |
 | DATABASE_URL              | Usually | Secret owner    | Postgres connection string | postgresql+psycopg://...                               |
 | REDIS_URL                 | Usually | Secret owner    | Redis connection string    | redis://localhost:6379/0                               |
 | GOOGLE_CLIENT_ID          | Yes     | Secret owner    | Google OAuth client id     | (set locally)                                          |

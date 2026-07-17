@@ -25,13 +25,32 @@ Validation:
 - Strict mypy and Ruff gates pass for canonical code and owned automation scripts.
 - Measured combined coverage is 63.24%; CI floor is ratcheted to the M1 target of 45%.
 
+## Slice 2: Identity Persistence and Authenticated Sessions
+
+Completed:
+
+- Added users, devices, sessions, and conversations to canonical persistence.
+- Added Alembic migration `0003_identity_and_conversations`.
+- Replaced caller-supplied identity headers with opaque `X-Lockdin-Session-Token` resolution.
+- Store only SHA-256 session-token digests; the raw token is returned once at issuance.
+- Enforce session expiry, revocation, active-user status, and actor ownership.
+- Added a setup-secret-gated, one-time owner bootstrap endpoint.
+- Added a database uniqueness constraint to prevent concurrent duplicate owner bootstrap.
+
+Validation:
+
+- Combined canonical and migration-source suite passes: 20 tests.
+- Measured combined coverage is 69.81% against the 45% CI floor.
+- Alembic offline PostgreSQL generation emits all four identity tables through `head`.
+- Ruff and strict mypy gates pass.
+
 ## Security Boundary
 
-`X-Lockdin-User-Id` currently proves identity propagation, not authentication. A trusted local host or authenticated session layer must issue actor context before external exposure. Routes no longer invent identity, but header spoofing remains blocked only by the future authenticated boundary.
+Protected routes now accept only an opaque session token and resolve actor identity from persistence. The one-time bootstrap route requires a separate `APP_BOOTSTRAP_TOKEN` of at least 32 characters. Session tokens are high-entropy values stored only as SHA-256 digests. Remote exposure still requires the M3 authenticated local-host boundary and request hardening from M1-T08.
 
 ## Remaining M1 Work
 
-- [ ] M1-T02 Add users, devices, sessions, and conversations persistence.
+- [x] M1-T02 Add users, devices, sessions, and conversations persistence.
 - [ ] M1-T03 Encrypt integration credentials at rest.
 - [ ] M1-T04 Document production KMS/token custody path.
 - [ ] M1-T05 Migrate remaining core operations into use cases and explicit transactions.

@@ -1,8 +1,8 @@
 {
-  "Identity Integrity": "ActorContext is required by protected routes; no hardcoded user identity remains in application code; Celery sync receives user_id at dispatch.",
-  "Data Security": "Identity propagation exists, but authenticated sessions and token encryption are not implemented.",
+  "Identity Integrity": "Protected routes resolve ActorContext from persisted opaque sessions; no caller-supplied user identity or hardcoded identity remains; Celery sync receives resolved user_id at dispatch.",
+  "Data Security": "Session tokens are high entropy and stored only as SHA-256 digests with expiry and revocation; integration credential encryption remains pending.",
   "API Reliability": "Missing actor context uses a problem-details payload; remaining API errors and idempotency are pending.",
-  "Schema Correctness": "Consent domain contract exists; M1 identity tables and event constraints are pending.",
+  "Schema Correctness": "Users, devices, sessions, and conversations have foreign keys, indexes, expiry, and concurrency-safe bootstrap uniqueness; event constraints remain pending.",
   "Observability": "Structured correlation logging is not implemented.",
-  "Test Depth": "Unit and route regression tests pass; PostgreSQL integration fixtures are pending."
+  "Test Depth": "Twenty unit and route tests pass at 69.81% combined coverage; Alembic PostgreSQL SQL generation passes; live PostgreSQL fixtures remain pending."
 }
