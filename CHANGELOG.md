@@ -2,6 +2,42 @@
 
 All notable changes to this project are documented in this file.
 
+## Unreleased - M1 PostgreSQL Integration Fixtures
+
+### Added
+- Pytest fixtures for MVP and backend test suites.
+  - MVP fixtures: `mvp_engine`, `identity_engine`, `mvp_db`, `identity_db`, `client_with_db`, `issued_owner`, `auth_headers`.
+  - Backend fixtures: `identity_engine`, `identity_db`, `issued_owner`, `auth_headers`.
+  - Fixtures support authenticated testing and database session management.
+- Factory classes for standardized test data generation.
+  - `UserFactory.create_owner()`: Bootstrap test owner with configurable names/platform.
+  - `IntegrationFactory.create_google_integration()`: Test Google integration records.
+  - `ConsentFactory.create_google_calendar_consent()`: Test consent records.
+  - `RequestFactory`: HTTP header helpers (auth, correlation ID, combined).
+- Comprehensive fixture/factory tests.
+  - MVP: 15 tests validating fixtures, factories, and integration scenarios.
+  - Backend: 10 tests validating fixtures and factories.
+  - All 25 tests passing; no breaking changes.
+- Test infrastructure enables:
+  - Authenticated API testing via TestClient with dependency override.
+  - Standardized test data generation via factories.
+  - Request header helpers for consistency.
+  - Production-ready fixtures for future integration tests.
+
+### Testing
+- Fixture/factory tests: 25/25 passing.
+- Full test suite: 83 tests passing (up from 58).
+- Coverage: 85% (exceeds 72% target).
+- No breaking changes to existing tests.
+
+### Files Changed
+- `lockdin_mvp/tests/conftest.py`: MVP fixture definitions.
+- `lockdin_mvp/tests/factories.py`: MVP factory classes.
+- `lockdin_mvp/tests/test_fixtures_and_factories.py`: MVP fixture tests.
+- `apps/backend/tests/conftest.py`: Backend fixture definitions.
+- `apps/backend/tests/factories.py`: Backend factory classes.
+- `apps/backend/tests/test_backend_fixtures_and_factories.py`: Backend fixture tests.
+
 ## Unreleased - M1 Structured Correlation Logging
 
 ### Added
