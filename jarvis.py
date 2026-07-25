@@ -1,4 +1,4 @@
-import os
+ import os
 import sys
 try:
     import torch
@@ -51,7 +51,7 @@ sys.path.insert(0, CSM_PATH)
 
 # Local imports may require heavy deps; import lazily in Jarvis.__init__
 Transformer = None
-ModelArgs = None
+ModelArgs = None 
 load_csm_1b = None
 Segment = None
 encode_messages = None
